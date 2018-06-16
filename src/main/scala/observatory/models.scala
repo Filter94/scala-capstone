@@ -53,16 +53,7 @@ case class CellPoint(x: Double, y: Double)
   * @param green Level of green, 0 ≤ green ≤ 255
   * @param blue  Level of blue, 0 ≤ blue ≤ 255
   */
-case class Color(red: Int, green: Int, blue: Int) {
-  def + (that: Color): Color =
-    Color(red + that.red, green + that.green, blue + that.blue)
-
-  def / (that: Double): Color =
-    Color((red / that).toInt, (green / that).toInt, (blue / that).toInt)
-
-  def *(that: Double): Color =
-    Color((that * red).toInt, (that * green).toInt, (that * blue).toInt)
-}
+case class Color(red: Int, green: Int, blue: Int)
 
 case class Id(stnId: Option[STN], wbanId: Option[WBAN]) {
   def validate: Boolean = stnId.nonEmpty || wbanId.nonEmpty

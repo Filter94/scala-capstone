@@ -63,6 +63,15 @@ trait VisualizationTest extends FunSuite with Checkers {
     assert(interpolatedColor === expectedColor)
   }
 
+  test("Interpolation works correct on double") {
+    val thePoint: Temperature = 1.073741823E9
+    val expectedColor = Color(128,0,128)
+    val colors: Iterable[(Temperature, Color)] = List((-1.0,Color(255,0,0)), (2.147483647E9,Color(0,0,255)))
+
+    val interpolatedColor = Visualization.interpolateColor(colors, thePoint)
+    assert(interpolatedColor === expectedColor)
+  }
+
   test("Visualize generates an image with correct size") {
     val expectedWidth = 360
     val expectedHeigth = 180

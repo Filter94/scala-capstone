@@ -103,8 +103,15 @@ object Visualization {
     * @return The color that corresponds to `value`, according to the color scale defined by `points`
     */
   def interpolateColor(points: Iterable[(Temperature, Color)], value: Temperature): Color = {
+    def interpolateComponent(x1: Temperature, x2: Temperature, value: Temperature)(y1: Int, y2: Int): Int =
+      math.round(y1 + ((y2 - y1) / (x2 - x1) * (value - x1))).toInt
+
     val ((x1: Temperature, y1: Color), (x2: Temperature, y2: Color)) = findTwoClosest(points, value)
-    (y1 * (x2 - value) + y2 * (value - x1)) / (x2 - x1)
+    def interpolator = interpolateComponent(x1, x2, value)(_, _)
+    val newRed = interpolator(y1.red, y2.red)
+    val newGreen = interpolator(y1.green, y2.green)
+    val newBlue = interpolator(y1.blue, y2.blue)
+    Color(newRed, newGreen, newBlue)
   }
 
   /**
