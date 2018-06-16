@@ -4,14 +4,18 @@ import java.nio.file.Paths
 import java.time.LocalDate
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.functions.avg
-import SparkContextKeeper.spark
 
 /**
   * 1st milestone: data extraction
   */
 object Extraction {
+  val spark = SparkSession
+    .builder()
+    .appName("Data extraction")
+    .config("spark.master", "local")
+    .getOrCreate()
 
   import spark.implicits._
 
