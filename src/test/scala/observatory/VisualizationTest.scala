@@ -1,10 +1,11 @@
 package observatory
 
 
+import org.scalactic.TripleEqualsSupport
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 
-trait VisualizationTest extends FunSuite with Checkers {
+trait VisualizationTest extends FunSuite with Checkers with TripleEqualsSupport {
   test("Prediction of an known point returns the point") {
     val thePoint = Location(37.35, -78.433)
     val theTemp = 27.3
@@ -47,6 +48,32 @@ trait VisualizationTest extends FunSuite with Checkers {
 
     val interpolatedColor = Visualization.interpolateColor(colors, thePoint)
     assert(interpolatedColor === expectedColor)
+  }
+
+  test("Interpolation of unknown point returns the point in the middle with two components") {
+    val thePoint: Temperature = 5
+    val expectedColor = Color(0, 50, 50)
+    val colors: Seq[(Temperature, Color)] = Seq(
+      (10, Color(0, 0, 100)),
+      (0, Color(0, 100, 0)))
+
+    val interpolatedColor = Visualization.interpolateColor(colors, thePoint)
+    assert(interpolatedColor === expectedColor)
+  }
+
+  test("interpolateColor") {
+    val colors = List(
+      (100.0, Color(255, 255, 255)),
+      (50.0, Color(0, 0, 0)),
+      (0.0, Color(255, 0, 128))
+    )
+
+    assert(Visualization.interpolateColor(colors, 50.0) === Color(0, 0, 0))
+    assert(Visualization.interpolateColor(colors, 0.0) === Color(255, 0, 128))
+    assert(Visualization.interpolateColor(colors, -10.0) === Color(255, 0, 128))
+    assert(Visualization.interpolateColor(colors, 200.0) === Color(255, 255, 255))
+    assert(Visualization.interpolateColor(colors, 75.0) === Color(127, 127, 127))
+    assert(Visualization.interpolateColor(colors, 25.0) === Color(128, 0, 64))
   }
 
   test("Interpolation works correct on unsorted data") {
@@ -119,24 +146,6 @@ trait VisualizationTest extends FunSuite with Checkers {
     assert(image.forall { case (_, _, pixel) => pixel.productIterator.exists(component => component != 0) })
   }
 
-  test("Test gradient") {
-    val temps: Seq[(Location, Temperature)] = Seq(
-      (Location(90, -180), 0),
-      (Location(90, 179), 20),
-      (Location(-89, -180), 0),
-      (Location(-89, 179), 20),
-      (Location(0, -180), 0),
-      (Location(0, 179), 20))
-    val colors: Seq[(Temperature, Color)] = Seq(
-      (0, Color(0, 0, 0)),
-      (20, Color(0, 0, 100)))
-
-    val image = Visualization.visualize(temps, colors)
-    assert(image.forall { case (x, _, pixel) =>
-      val diff = pixel.blue - 50
-      (x > 180) == (diff > 0)})
-  }
-
   test("Test locations on image") {
     val temps: Seq[(Location, Temperature)] = Seq(
       (Location(90, -180), 0),
@@ -150,11 +159,12 @@ trait VisualizationTest extends FunSuite with Checkers {
       (20, Color(0, 0, 100)))
 
     val image = Visualization.visualize(temps, colors)
+    image.output("1.bmp")
     assert(image.pixel((0, 90)).blue == 0)
     assert(image.pixel((359, 90)).blue == 100)
   }
 
-  test("Triangle inequality test") {
+  test("Image test") {
     val temps: Seq[(Location, Temperature)] = Seq(
       (Location(45.0, -90.0), -1.0),
       (Location(-45.0, 0.0), -100.0))
@@ -163,7 +173,5 @@ trait VisualizationTest extends FunSuite with Checkers {
       (-100.0, Color(0, 0, 255)))
     val image = Visualization.visualize(temps, colors)
     image.output("1.bmp")
-    val thePixel = image.pixel((0, 117))
-    assert(thePixel.red > thePixel.blue)
   }
 }

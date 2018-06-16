@@ -10,6 +10,7 @@ import math._
 object Visualization {
   val epsilon = 1E-5
   val PI = 180
+  val R = 6372.8
 
   def equals(a: Location, b: Location): Boolean =
     a.lon - b.lon < epsilon && a.lat - b.lat < epsilon
@@ -19,10 +20,9 @@ object Visualization {
   def sphereDistance(a: Location, b: Location): Distance =
     (a, b) match {
       case _ if Location.equals(a, b) => 0
-      case _ if a.lat == -b.lat && (a.lon == b.lon -180 || a.lon == b.lon + 180) => PI
       case _ =>
-        acos(sin(a.lat / (PI / 2)) * sin(b.lat / (PI / 2)) +
-          cos(a.lat / (PI / 2)) * cos(b.lat / (PI / 2)) * cos((b.lon - a.lon) / PI / 2))
+        R * acos(sin(toRadians(a.lat)) * sin(toRadians(b.lat)) +
+          cos(toRadians(a.lat)) * cos(toRadians(b.lat)) * cos(toRadians(b.lon - a.lon)))
     }
 
   def w(x: Location, d: Distance, xi: Location, p: Double): Temperature =
@@ -39,7 +39,7 @@ object Visualization {
 
   def predictTemperatures(temperatures: Iterable[(Location, Temperature)],
                           locations: Iterable[Location]): Iterable[Temperature] = {
-    val P = 2.0
+    val P = 3.0
     (for {
       location <- locations.par
     } yield {
@@ -81,7 +81,7 @@ object Visualization {
           case x :: y :: Nil =>
             if (newDistance < x.distance)
               ClosePoint(point, newDistance) :: y :: Nil
-            else if (newDistance < x.distance)
+            else if (newDistance < y.distance)
               x :: ClosePoint(point, newDistance) :: Nil
             else
               agg
@@ -110,10 +110,15 @@ object Visualization {
 
     def bounder = boundValue(0, 255)(_)
 
-    val newRed = bounder(interpolator(y1.red, y2.red))
-    val newGreen = bounder(interpolator(y1.green, y2.green))
-    val newBlue = bounder(interpolator(y1.blue, y2.blue))
-    Color(newRed, newGreen, newBlue)
+    value match {
+      case _ if value < x1 => y1
+      case _ if value > x2 => y2
+      case _ =>  // in between
+        val newRed = bounder(interpolator(y1.red, y2.red))
+        val newGreen = bounder(interpolator(y1.green, y2.green))
+        val newBlue = bounder(interpolator(y1.blue, y2.blue))
+        Color(newRed, newGreen, newBlue)
+    }
   }
 
   /**
@@ -124,7 +129,7 @@ object Visualization {
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Seq[(Temperature, Color)]): Image = {
     val WIDTH = 360
     val HEIGHT = 180
-    val latOffset: Double = -90
+    val latOffset: Double = 90
     val lonOffset: Double = -180
 
     def computePixels(temps: Iterable[(Location, Temperature)], locations: Iterable[Location]): Array[Pixel] = {
@@ -142,7 +147,7 @@ object Visualization {
     val locations: Array[Location] = new Array[Location](WIDTH * HEIGHT)
       locations.indices.par
       .foreach(i =>
-        locations(i) = Location(-(i / WIDTH + latOffset), i % WIDTH + lonOffset))
+        locations(i) = Location(latOffset - i / WIDTH, i % WIDTH + lonOffset))
     val pixels = computePixels(temperatures, locations)
     Image(WIDTH, HEIGHT, pixels)
   }
