@@ -154,29 +154,29 @@ object Visualization {
   }
 
   //  This agggregator with datasets is inefficient
-  //  private def interpolatedTemp(P: Int = 3) =
-  //    new Aggregator[(Location, Location, Temperature), (Temperature, Temperature), Temperature] {
-  //      // Pure ds / df aggregator. Haven't figured out how to use it with DS efficiently
-  //      override def zero: (Temperature, Temperature) = (0.0, 0.0)
-  //
-  //      override def merge(b: (Temperature, Temperature), a: (Distance, Temperature)): (Distance, Temperature) =
-  //        (a._1 + b._1, a._2 + b._2)
-  //
-  //      override def reduce(b1: (Temperature, Temperature), b2: (Location, Location, Temperature)): (Temperature, Temperature) =
-  //        (b1, b2) match {
-  //          case ((nomAcc, denomAcc), (xi, location, ui)) =>
-  //            val d = max(sphereDistance(location, xi), epsilon)
-  //            val wi = w(location, d, P)
-  //            (nomAcc + wi * ui, denomAcc + wi)
-  //        }
-  //
-  //      override def finish(reduction: (Temperature, Temperature)): Temperature = reduction._1 / reduction._2
-  //
-  //      def bufferEncoder: Encoder[(Distance, Temperature)] =
-  //        Encoders.tuple(Encoders.scalaDouble, Encoders.scalaDouble)
-  //
-  //      def outputEncoder: Encoder[Temperature] = Encoders.scalaDouble
-  //    }.toColumn
+//    private def interpolatedTemp(P: Int = 3) =
+//      new Aggregator[(Location, Location, Temperature), (Temperature, Temperature), Temperature] {
+//        // Pure ds / df aggregator. Haven't figured out how to use it with DS efficiently
+//        override def zero: (Temperature, Temperature) = (0.0, 0.0)
+//
+//        override def merge(b: (Temperature, Temperature), a: (Distance, Temperature)): (Distance, Temperature) =
+//          (a._1 + b._1, a._2 + b._2)
+//
+//        override def reduce(b1: (Temperature, Temperature), b2: (Location, Location, Temperature)): (Temperature, Temperature) =
+//          (b1, b2) match {
+//            case ((nomAcc, denomAcc), (xi, location, ui)) =>
+//              val d = max(sphereDistance(location, xi), epsilon)
+//              val wi = w(location, d, P)
+//              (nomAcc + wi * ui, denomAcc + wi)
+//          }
+//
+//        override def finish(reduction: (Temperature, Temperature)): Temperature = reduction._1 / reduction._2
+//
+//        def bufferEncoder: Encoder[(Distance, Temperature)] =
+//          Encoders.tuple(Encoders.scalaDouble, Encoders.scalaDouble)
+//
+//        def outputEncoder: Encoder[Temperature] = Encoders.scalaDouble
+//      }.toColumn
 
   //  Parallel implementation
   /**
@@ -186,13 +186,9 @@ object Visualization {
     */
   def predictTemperature(temperatures: Iterable[(Location, Temperature)], location: Location,
                          P: Double = 3.0): Temperature = {
-    val dists = temperatures.par.map {
-      case (xi, ui) =>
+    val (nominator, denominator) = temperatures.aggregate((0.0, 0.0))({
+      case ((nomAcc: Distance, denomAcc: Temperature), (xi: Location, ui: Temperature)) =>
         val d = max(sphereDistance(location, xi), epsilon)
-        (d, ui)
-    }
-    val (nominator, denominator) = dists.aggregate((0.0, 0.0))({
-      case ((nomAcc: Distance, denomAcc: Temperature), (d: Distance, ui: Temperature)) =>
         val wi = w(location, d, P)
         (nomAcc + wi * ui, denomAcc + wi)
     }, {
