@@ -1,5 +1,6 @@
 package observatory
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.{DoubleType, IntegerType, StructField, StructType}
 
 object Location {
@@ -7,6 +8,18 @@ object Location {
 
   def equals(a: Location, b: Location): Boolean = {
       math.abs(a.lon - b.lon) < epsilon && math.abs(a.lat - b.lat) < epsilon
+  }
+
+  def fromLocationRow(locationRow: Row): Location = {
+    Location(locationRow.getAs[Double]("lat"), locationRow.getAs[Double]("lon"))
+  }
+
+  def fromRow[T](row: Row, key: T): Location = {
+    val locationRow: Row = key match {
+      case field: String => row.getAs[Row](field)
+      case idx: Int => row.getAs[Row](idx)
+    }
+    fromLocationRow(locationRow)
   }
 }
 

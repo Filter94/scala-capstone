@@ -4,7 +4,6 @@ import java.nio.file.Paths
 import java.time.LocalDate
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.functions.avg
 import SparkContextKeeper.spark
 
@@ -60,9 +59,8 @@ object Extraction {
     for {
       row <- joinedData.rdd
     } yield {
-      val location = row.getAs[Row]("location")
       (LocalDate.of(year, row.getAs[Month]("month"), row.getAs[Day]("day")),
-        Location(location.getAs[Double]("lat"), location.getAs[Double]("lon")),
+        Location.fromRow(row, "location"),
         row.getAs[Temperature]("temp"))
     }
   }

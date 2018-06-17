@@ -1,11 +1,15 @@
 package observatory
 
 
-import org.scalactic.TripleEqualsSupport
+import org.scalactic.{Equality, TolerantNumerics, TripleEqualsSupport}
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 
-trait VisualizationTest extends FunSuite with Checkers with TripleEqualsSupport {
+trait VisualizationTest extends FunSuite with Checkers {
+  val epsilon = 1e-4d
+
+  implicit val doubleEq: Equality[Temperature] = TolerantNumerics.tolerantDoubleEquality(epsilon)
+
   test("Prediction of an known point returns the point") {
     val thePoint = Location(37.35, -78.433)
     val theTemp = 27.3
@@ -19,7 +23,7 @@ trait VisualizationTest extends FunSuite with Checkers with TripleEqualsSupport 
 
   test("Prediction of unknown point returns a new point") {
     val thePoint = Location(0, 5)
-    val expectedTemp = 10
+    val expectedTemp = 10.0
     val temps: Iterable[(Location, Temperature)] = Iterable(
       (Location(0, 0), 0),
       (Location(0, 10), 20))
@@ -70,10 +74,9 @@ trait VisualizationTest extends FunSuite with Checkers with TripleEqualsSupport 
 
     assert(Visualization.interpolateColor(colors, 50.0) === Color(0, 0, 0))
     assert(Visualization.interpolateColor(colors, 0.0) === Color(255, 0, 128))
-    assert(Visualization.interpolateColor(colors, -10.0) === Color(255, 0, 128))
     assert(Visualization.interpolateColor(colors, 200.0) === Color(255, 255, 255))
     assert(Visualization.interpolateColor(colors, 75.0) === Color(127, 127, 127))
-    assert(Visualization.interpolateColor(colors, 25.0) === Color(128, 0, 64))
+    assert(Visualization.interpolateColor(colors, 25.0) === Color(127, 0, 64))
   }
 
   test("Interpolation works correct on unsorted data") {
@@ -159,7 +162,7 @@ trait VisualizationTest extends FunSuite with Checkers with TripleEqualsSupport 
       (20, Color(0, 0, 100)))
 
     val image = Visualization.visualize(temps, colors)
-    image.output("1.bmp")
+//    image.output("1.bmp")
     assert(image.pixel((0, 90)).blue == 0)
     assert(image.pixel((359, 90)).blue == 100)
   }
