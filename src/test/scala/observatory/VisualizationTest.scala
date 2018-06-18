@@ -1,6 +1,9 @@
 package observatory
 
 
+import java.io.File
+import java.net.URI
+
 import org.scalactic.{Equality, TolerantNumerics, TripleEqualsSupport}
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
@@ -150,6 +153,13 @@ trait VisualizationTest extends FunSuite with Checkers {
   }
 
   test("Test locations on image") {
+    val directory = "./target/temperatures/1/test/"
+    val fileName = "test.png"
+    val file = new File(directory + fileName)
+    if (!file.createNewFile()) {
+      new File(directory).mkdirs()
+    }
+    assert(file.canWrite)
     val temps: Seq[(Location, Temperature)] = Seq(
       (Location(90, -180), 0),
       (Location(90, 179), 20),
@@ -158,11 +168,11 @@ trait VisualizationTest extends FunSuite with Checkers {
       (Location(0, -180), 0),
       (Location(0, 179), 20))
     val colors: Seq[(Temperature, Color)] = Seq(
-      (0, Color(0, 0, 0)),
+      (0, Color(100, 0, 0)),
       (20, Color(0, 0, 100)))
 
     val image = Visualization.visualize(temps, colors)
-//    image.output("1.bmp")
+    image.output(file)
     assert(image.pixel((0, 90)).blue == 0)
     assert(image.pixel((359, 90)).blue == 100)
   }
@@ -175,6 +185,6 @@ trait VisualizationTest extends FunSuite with Checkers {
       (-1.0, Color(255, 0, 0)),
       (-100.0, Color(0, 0, 255)))
     val image = Visualization.visualize(temps, colors)
-    image.output("1.bmp")
+    image.output("pepsi.png")
   }
 }

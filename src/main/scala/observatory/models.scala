@@ -31,6 +31,15 @@ object Location {
   */
 case class Location(lat: Double, lon: Double)
 
+object TempByLocation {
+  def convertIterable(iter: Iterable[(Location, Temperature)]): Iterable[TempByLocation] =
+    iter.map{case (location, temperature) => TempByLocation(location, temperature)}
+}
+
+case class TempByLocation(location: Location, temperature: Temperature)
+
+case class LocationWindow(topLeft: Location, bottomRight: Location)
+
 /**
   * Introduced in Week 3. Represents a tiled web map tile.
   * See https://en.wikipedia.org/wiki/Tiled_web_map

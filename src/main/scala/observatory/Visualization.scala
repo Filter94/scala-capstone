@@ -4,7 +4,7 @@ import com.sksamuel.scrimage.{Image, Pixel}
 import org.apache.spark.sql._
 
 import math._
-import scala.collection.parallel.ParIterable
+import scala.collection.parallel.{ParIterable, ParSeq}
 import SparkContextKeeper.spark
 
 /**
@@ -19,8 +19,8 @@ object Visualization {
   private val COLOR_MAX = 255
   private type Distance = Double
 
-  def visualize(temperatures: Iterable[(Location, Temperature)],
-                colors: Iterable[(Temperature, Color)]): Image = visualizeSparkWrapper(temperatures, colors)
+  def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image =
+    visualizePar(temperatures, colors)(90, 180, -180, 360, 360, 180)
 
   def equals(a: Location, b: Location): Boolean =
     a.lon - b.lon < epsilon && a.lat - b.lat < epsilon
@@ -30,8 +30,9 @@ object Visualization {
     (a, b) match {
       case _ if Location.equals(a, b) => 0
       case _ =>
+        val delta = (a.lon max b.lon) - (a.lon min b.lon)
         R * acos(sin(toRadians(a.lat)) * sin(toRadians(b.lat)) +
-          cos(toRadians(a.lat)) * cos(toRadians(b.lat)) * cos(toRadians(b.lon - a.lon)))
+          cos(toRadians(a.lat)) * cos(toRadians(b.lat)) * cos(toRadians(delta)))
     }
 
   def w(x: Location, d: Distance, p: Double): Temperature = 1 / math.pow(d, p)
@@ -93,12 +94,10 @@ object Visualization {
     val tempByLocationDs = spark.createDataset(temperatures.map {
       case (location, temp) => TempByLocation(location, temp)
     }.toSeq)
-    visualizeSpark(tempByLocationDs, colors)
+    visualizeSpark(tempByLocationDs, colors)(90, 180, -180, 360, 360, 180, 127)
   }
 
   //  Spark implementation.
-
-  case class TempByLocation(location: Location, temperature: Temperature)
 
   def predictTemperaturesSpark(temperatures: Dataset[TempByLocation],
                                locations: Dataset[Location]): Dataset[(Location, Temperature)] = {
@@ -130,11 +129,22 @@ object Visualization {
       }.toDF("location", "temp").as[(Location, Temperature)]
   }
 
-  def visualizeSpark(temperatures: Dataset[TempByLocation],
-                     colors: Iterable[(Temperature, Color)], WIDTH: Int = 360, HEIGHT: Int = 180): Image = {
-    val latOffset: Double = 180 / 2
-    val lonOffset: Double = -360 / 2
-
+  /**
+    * Generates an heatmap image of size WIDTH * HEIGHT by given parameters
+    *
+    * @param temperatures temperatures by location
+    * @param colors       palette of colors for some temperatures
+    * @param latStart     latitude of a top left pixel
+    * @param latLength    height of the image in degrees
+    * @param lonStart     longitude of a top left pixel
+    * @param lonLength    width of the image in degrees
+    * @param WIDTH        width of the image in pixels
+    * @param HEIGHT       height of the image in pixels
+    * @return
+    */
+  def visualizeSpark(temperatures: Dataset[TempByLocation], colors: Iterable[(Temperature, Color)])(
+    latStart: Double, latLength: Double, lonStart: Double, lonLength: Double,
+    WIDTH: Int, HEIGHT: Int, transparency: Int = COLOR_MAX): Image = {
     def computePixels(temps: Dataset[TempByLocation], locations: Dataset[Location]): Dataset[Pixel] = {
       val tempsInterpolated = predictTemperaturesSpark(temps, locations)
         .orderBy($"location.lat".desc, $"location.lon")
@@ -143,12 +153,18 @@ object Visualization {
         temp <- tempsInterpolated
       } yield {
         val color = interpolateColor(colors, temp)
-        Pixel(color.red, color.green, color.blue, COLOR_MAX)
+        Pixel(color.red, color.green, color.blue, transparency)
       }
     }
 
     val locations: Dataset[Location] = spark.range(WIDTH * HEIGHT)
-      .map(i => Location(latOffset - i / WIDTH, i % WIDTH + lonOffset))
+      .map(i => {
+        val latIdx = i / WIDTH
+        val lonIdx = i % WIDTH
+        val latStep = latLength / HEIGHT
+        val lonStep = lonLength / WIDTH
+        Location(latStart - latIdx * latStep, lonStart + lonIdx * lonStep)
+      })
     val pixels = computePixels(temperatures, locations).collect()
     Image(WIDTH, HEIGHT, pixels)
   }
@@ -199,33 +215,37 @@ object Visualization {
   }
 
   def predictTemperatures(temperatures: Iterable[(Location, Temperature)],
-                          locations: Iterable[Location]): ParIterable[Temperature] = {
+                          locations: ParSeq[Location]): ParIterable[Temperature] = {
     for {
       location <- locations.par
     } yield predictTemperature(temperatures, location)
   }
 
   def visualizePar(temperatures: Iterable[(Location, Temperature)],
-                   colors: Iterable[(Temperature, Color)], WIDTH: Int = 360, HEIGHT: Int = 180): Image = {
-    val latOffset: Double = 180 / 2
-    val lonOffset: Double = -360 / 2
+                   colors: Iterable[(Temperature, Color)])(
+                    latStart: Double, latLength: Double, lonStart: Double, lonLength: Double,
+                    WIDTH: Int, HEIGHT: Int, transparency: Int = COLOR_MAX): Image = {
 
-    def computePixels(temps: Iterable[(Location, Temperature)], locations: Iterable[Location]): Array[Pixel] = {
+    def computePixels(temps: Iterable[(Location, Temperature)], locations: ParSeq[Location]): Array[Pixel] = {
       val tempsInterpolated: ParIterable[Temperature] = predictTemperatures(temps, locations)
       val pixels = new Array[Pixel](locations.size)
       for {
         (temp, i) <- tempsInterpolated.zipWithIndex.par
       } {
         val color = interpolateColor(colors, temp)
-        pixels(i) = Pixel(color.red, color.green, color.blue, COLOR_MAX)
+        pixels(i) = Pixel(color.red, color.green, color.blue, transparency)
       }
       pixels
     }
 
-    val locations: Array[Location] = new Array[Location](WIDTH * HEIGHT)
-    locations.indices.par
-      .foreach(i =>
-        locations(i) = Location(latOffset - i / WIDTH, i % WIDTH + lonOffset))
+    val locations = Range(0, WIDTH * HEIGHT).par
+      .map(i => {
+        val latIdx = i / WIDTH
+        val lonIdx = i % WIDTH
+        val latStep = latLength / HEIGHT
+        val lonStep = lonLength / WIDTH
+        Location(latStart - latIdx * latStep, lonStart + lonIdx * lonStep)
+      })
     val pixels = computePixels(temperatures, locations)
     Image(WIDTH, HEIGHT, pixels)
   }
