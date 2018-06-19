@@ -6,7 +6,6 @@ import java.io.File
 import org.scalactic.{Equality, TolerantNumerics}
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
-import Visualization.implicits._
 
 trait VisualizationTest extends FunSuite with Checkers {
   val epsilon = 1e-4d
@@ -186,5 +185,21 @@ trait VisualizationTest extends FunSuite with Checkers {
       (-100.0, Color(0, 0, 255)))
     val image = Visualization.visualize(temps, colors)
     image.output("pepsi.png")
+  }
+
+  test("Image test ends in reasonable time") {
+    val colors: Seq[(Temperature, Color)] = Seq(
+      (60, Color(255, 255, 255)),
+      (32, Color(255, 0, 0)),
+      (12, Color(255, 255, 0)),
+      (0, Color(0, 255, 255)),
+      (-15, Color(0, 0, 255)),
+      (-27, Color(255, 0, 255)),
+      (-50, Color(33, 255, 107)),
+      (-60, Color(0, 0, 0)))
+    val temperaturesByDate = Extraction.locateTemperaturesSpark(1976, "/stations.csv", "/1975.csv")
+    val temperatures = Extraction.locationYearlyAverageRecordsSpark(temperaturesByDate).collect().toIterable
+    val image = Visualization.visualize(temperatures, colors)
+    image.output("par test.png")
   }
 }

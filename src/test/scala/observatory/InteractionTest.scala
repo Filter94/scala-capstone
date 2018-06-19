@@ -1,11 +1,8 @@
 package observatory
 
 import java.io.File
-import java.time.LocalDate
 
-import com.sksamuel.scrimage.{Image, Pixel}
-import observatory.SparkContextKeeper.spark
-import org.apache.spark.sql.Dataset
+import com.sksamuel.scrimage.Image
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 
@@ -25,43 +22,17 @@ trait InteractionTest extends FunSuite with Checkers {
 
   test("Tile image test") {
     val temps: Seq[(Location, Temperature)] = Seq(
-      (Location(45.0, -90.0), 0),
-      (Location(45.0, 90), 32),
-      (Location(-45.0, 90.0), 32),
-      (Location(-45.0, -90), 0))
+      (Location(45.0, -90.0), -1.0),
+      (Location(-45.0, 0.0), -100.0))
     val colors: Seq[(Temperature, Color)] = Seq(
-      (32, Color(255, 0, 0)),
-      (0, Color(0, 255, 255)))
+      (-1.0, Color(255, 0, 0)),
+      (-100.0, Color(0, 0, 255)))
     val tile = Tile(0, 0, 0)
     val image = Interaction.tile(temps, colors, tile)
     image.output(s"tile.png")
   }
 
-  test("Generate tiles par") {
-    val colors: Seq[(Temperature, Color)] = Seq(
-      (60, Color(255, 255, 255)),
-      (32, Color(255, 0, 0)),
-      (12, Color(255, 255, 0)),
-      (0, Color(0, 255, 255)),
-      (-15, Color(0, 0, 255)),
-      (-27, Color(255, 0, 255)),
-      (-50, Color(33, 255, 107)),
-      (-60, Color(0, 0, 0)))
-    def generateImage(year: Year, tile: Tile, data: Iterable[(Location, Temperature)]): Unit = {
-      val image: Image = Interaction.tilePar(data, colors, tile)(256, 256)
-      val directory = s"./target/temperatures/$year/${tile.zoom}/"
-      new File(directory).mkdirs()
-      val fileName = s"${tile.x}-${tile.y}.png"
-      val file = new File(directory + fileName)
-      image.output(file)
-    }
-    val temsByLocations = Extraction.locateTemperaturesSpark(1975, "/stations.csv", "/1975.csv")
-    val data = Extraction.locationYearlyAverageRecordsSpark(temsByLocations).collect().toIterable
-    val yearlyData = Iterable((1975, data))
-    Interaction.generateTiles(yearlyData, generateImage)
-  }
-
-  test("Generate tiles spark") {
+  test("Generate tiles") {
     val colors: Seq[(Temperature, Color)] = Seq(
       (60, Color(255, 255, 255)),
       (32, Color(255, 0, 0)),
@@ -74,15 +45,13 @@ trait InteractionTest extends FunSuite with Checkers {
     def generateImage(year: Year, tile: Tile, data: Iterable[(Location, Temperature)]): Unit = {
       val image: Image = Interaction.tile(data, colors, tile)
       val directory = s"./target/temperatures/$year/${tile.zoom}/"
+      new File(directory).mkdirs()
       val fileName = s"${tile.x}-${tile.y}.png"
       val file = new File(directory + fileName)
-      if (!file.createNewFile()) {
-        new File(directory).mkdirs()
-      }
       image.output(file)
     }
-    val tempsByLocations = Extraction.locateTemperaturesSpark(1975, "/stations.csv", "/1975.csv")
-    val data = Extraction.locationYearlyAverageRecordsSpark(tempsByLocations).collect().toIterable
+    val temsByLocations = Extraction.locateTemperaturesSpark(1975, "/stations.csv", "/1975.csv")
+    val data = Extraction.locationYearlyAverageRecordsSpark(temsByLocations).collect().toIterable
     val yearlyData = Iterable((1975, data))
     Interaction.generateTiles(yearlyData, generateImage)
   }

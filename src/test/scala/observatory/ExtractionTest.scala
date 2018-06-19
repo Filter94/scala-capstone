@@ -40,7 +40,7 @@ trait ExtractionTest extends FunSuite {
 
   test("Average temperature ends in reasonable time on big data") {
     val res =
-      Extraction.locateTemperaturesSpark(2018, "/stations.csv", "/1975.csv").persist()
+      Extraction.locateTemperaturesSpark(2018, "/stations.csv", "/1975_bacup.csv").persist()
     assert(res.count() != 0)
     val avg = Extraction.locationYearlyAverageRecordsSpark(res)
     assert(avg.count() != 0)
