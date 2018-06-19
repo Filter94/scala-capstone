@@ -4,6 +4,7 @@ import com.sksamuel.scrimage.{Image, Pixel}
 
 import math._
 import SparkContextKeeper.spark
+import observatory.Visualization.visualizePar
 import org.apache.spark.sql.Dataset
 
 /**
@@ -11,6 +12,7 @@ import org.apache.spark.sql.Dataset
   */
 object Interaction {
   import spark.implicits._
+  import Visualization.implicits._
 
   /**
     * @param tile Tile coordinates
@@ -47,8 +49,10 @@ object Interaction {
     val endLocation = tileLocation(Tile(tile.x + 1, tile.y + 1, tile.zoom))
     val latLength = startLocation.lat - endLocation.lat
     val lonLength = endLocation.lon - startLocation.lon
-    Visualization.visualizeSpark(temperatures, colors)(startLocation.lat, latLength, startLocation.lon, lonLength,
-      IMAGE_SIZE_X, IMAGE_SIZE_Y, 127)
+    implicit def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Long): Location = {
+      ???
+    }
+    Visualization.visualizeSpark(IMAGE_SIZE_X, IMAGE_SIZE_Y, 127)(temperatures, colors)
   }
 
   def tilePar(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)], tile: Tile)
@@ -57,8 +61,10 @@ object Interaction {
     val endLocation = tileLocation(Tile(tile.x + 1, tile.y + 1, tile.zoom))
     val latLength = startLocation.lat - endLocation.lat
     val lonLength = endLocation.lon - startLocation.lon
-    Visualization.visualizePar(temperatures, colors)(startLocation.lat, latLength, startLocation.lon, lonLength,
-      IMAGE_SIZE_X, IMAGE_SIZE_Y, 127)
+    implicit def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
+      ???
+    }
+    visualizePar(IMAGE_SIZE_X, IMAGE_SIZE_Y, 127)(temperatures, colors)
   }
 
   /**

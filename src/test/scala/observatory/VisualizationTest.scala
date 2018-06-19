@@ -2,11 +2,11 @@ package observatory
 
 
 import java.io.File
-import java.net.URI
 
-import org.scalactic.{Equality, TolerantNumerics, TripleEqualsSupport}
+import org.scalactic.{Equality, TolerantNumerics}
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
+import Visualization.implicits._
 
 trait VisualizationTest extends FunSuite with Checkers {
   val epsilon = 1e-4d
