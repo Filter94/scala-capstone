@@ -13,7 +13,7 @@ trait ParInteractor extends Interactor with ParVisualizer {
     visualizeTile(IMAGE_SIZE_X, IMAGE_SIZE_Y)(temperatures, colors, tile)
   }
 
-  def visualizeTile(IMAGE_SIZE_X: Int, IMAGE_SIZE_Y: Int)(temperatures: Iterable[(Location, Temperature)],
+  def visualizeTile(sizeX: Int, sizeY: Int)(temperatures: Iterable[(Location, Temperature)],
                                                           colors: Iterable[(Temperature, Color)], tile: Tile): Image = {
     import Implicits.computePixels
     implicit def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
@@ -26,6 +26,6 @@ trait ParInteractor extends Interactor with ParVisualizer {
       val zoomedTile = Tile(xStart + lonIdx, yStart + latIdx, targetZoom + tile.zoom)
       tileLocation(zoomedTile)
     }
-    visualize(IMAGE_SIZE_X, IMAGE_SIZE_Y, 127)(temperatures, colors)
+    visualize(sizeX, sizeY, 127)(temperatures, colors)
   }
 }

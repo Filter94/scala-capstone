@@ -3,11 +3,13 @@ package observatory
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.{DoubleType, IntegerType, StructField, StructType}
 
+import scala.math._
+
 object Location {
   val epsilon = 1E-5
 
   def equals(a: Location, b: Location): Boolean = {
-      math.abs(a.lon - b.lon) < epsilon && math.abs(a.lat - b.lat) < epsilon
+    math.abs(a.lon - b.lon) < epsilon && math.abs(a.lat - b.lat) < epsilon
   }
 
   def fromLocationRow(locationRow: Row): Location = {
@@ -33,7 +35,7 @@ case class Location(lat: Double, lon: Double)
 
 object TempByLocation {
   def convertIterable(iter: Iterable[(Location, Temperature)]): Iterable[TempByLocation] =
-    iter.map{case (location, temperature) => TempByLocation(location, temperature)}
+    iter.map { case (location, temperature) => TempByLocation(location, temperature) }
 }
 
 case class TempByLocation(location: Location, temperature: Temperature)
@@ -49,7 +51,14 @@ case class LocationWindow(topLeft: Location, bottomRight: Location)
   * @param y    Y coordinate of the tile
   * @param zoom Zoom level, 0 ≤ zoom ≤ 19
   */
-case class Tile(x: Int, y: Int, zoom: Int)
+case class Tile(x: Int, y: Int, zoom: Int) {
+  lazy val location: Location = {
+    val n = pow(2.0, zoom)
+    val lon = x / n * 360.0 - 180.0
+    val lat = toDegrees(atan(sinh(Pi * (1 - 2 * (y / n)))))
+    Location(lat, lon)
+  }
+}
 
 /**
   * Introduced in Week 4. Represents a point on a grid composed of
@@ -83,6 +92,7 @@ case class Id(stnId: Option[STN], wbanId: Option[WBAN]) {
 
 object TemperatureRow {
   type FlatTemp = (Option[STN], Option[WBAN], Month, Day, Temperature)
+
   def flatSchema: StructType = StructType(
     Seq(
       StructField("stn", IntegerType, nullable = false),
@@ -113,6 +123,7 @@ case class TemperatureRow(id: Id, month: Month, day: Day, temp: Temperature) {
 
 object StationRow {
   type FlatStation = (Option[STN], Option[WBAN], Double, Double)
+
   def flatSchema: StructType = StructType(
     Seq(
       StructField("stn", IntegerType, nullable = true),
