@@ -1,18 +1,21 @@
-package observatory
+package observatory.helpers.spark
 
 import com.sksamuel.scrimage.{Image, Pixel}
-import observatory.SparkContextKeeper.spark
+import observatory._
+import observatory.helpers.SparkContextKeeper.spark
+import observatory.helpers.SparkContextKeeper.spark.implicits._
+import observatory.helpers.VisualizationMath._
+import observatory.helpers.VisualizationMath.Implicits.interpolateComponent
+import observatory.helpers.{VisualizationMath, Visualizer}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Dataset
-import spark.implicits._
 
 import scala.collection.GenIterable
 import scala.math._
 
-import VisualizationMath._
-import VisualizationMath.implicits.interpolateComponent
-
 object SparkVisualizer {
-  object implicits {
+
+  object Implicits {
     implicit def locationsGeneratorLong(WIDTH: Int, HEIGHT: Int)(i: Long): Location = {
       val latStart: Double = 90
       val latLength: Double = 180
@@ -24,22 +27,23 @@ object SparkVisualizer {
       val lonStep = lonLength / WIDTH
       Location(latStart - latIdx * latStep, lonStart + lonIdx * lonStep)
     }
+
+    implicit def computePixels(temps: Dataset[TempByLocation], locations: Dataset[Location],
+                               colors: Iterable[(Temperature, Color)], transparency: Int): Array[Pixel] = {
+      val tempsInterpolated = predictTemperaturesSpark(temps, locations)
+        .orderBy($"location.lat".desc, $"location.lon")
+        .select($"temp".as[Temperature]).collect()
+      for {
+        temp <- tempsInterpolated
+      } yield {
+        val color = interpolateColor(colors, temp)
+        Pixel(color.red, color.green, color.blue, transparency)
+      }
+    }
   }
 
   val epsilon = 1E-5
 
-  def computePixels(temps: Dataset[TempByLocation], locations: Dataset[Location],
-                    colors: Iterable[(Temperature, Color)], transparency: Int): Array[Pixel] = {
-    val tempsInterpolated = predictTemperaturesSpark(temps, locations)
-      .orderBy($"location.lat".desc, $"location.lon")
-      .select($"temp".as[Temperature]).collect()
-    for {
-      temp <- tempsInterpolated
-    } yield {
-      val color = interpolateColor(colors, temp)
-      Pixel(color.red, color.green, color.blue, transparency)
-    }
-  }
 
   /*  This agggregator is inefficient with datasets
       private def interpolatedTemp(P: Int = 3) =
@@ -106,19 +110,9 @@ object SparkVisualizer {
     */
   def visualize(WIDTH: Int, HEIGHT: Int, transparency: Int = COLOR_MAX)
                (temperatures: Dataset[TempByLocation], colors: Iterable[(Temperature, Color)])
-               (implicit locationsGenerator: (Int, Int) => Long => Location): Image = {
-    def computePixels(temps: Dataset[TempByLocation], locations: Dataset[Location]): Dataset[Pixel] = {
-      val tempsInterpolated = predictTemperaturesSpark(temps, locations)
-        .orderBy($"location.lat".desc, $"location.lon")
-        .select($"temp".as[Temperature])
-      for {
-        temp <- tempsInterpolated
-      } yield {
-        val color = interpolateColor(colors, temp)
-        Pixel(color.red, color.green, color.blue, transparency)
-      }
-    }
-
+               (implicit locationsGenerator: (Int, Int) => Long => Location,
+                computePixels: (Dataset[TempByLocation], Dataset[Location],
+                  Iterable[(Temperature, Color)], Int) => Array[Pixel]): Image = {
     val locations: Dataset[Location] = spark.range(WIDTH * HEIGHT)
       .map(i => {
         val latIdx = i / WIDTH
@@ -127,7 +121,7 @@ object SparkVisualizer {
         val lonStep = 360 / WIDTH
         Location(90 - latIdx * latStep, -180 + lonIdx * lonStep)
       })
-    val pixels = computePixels(temperatures, locations).collect()
+    val pixels = computePixels(temperatures, locations, colors, transparency)
     Image(WIDTH, HEIGHT, pixels)
   }
 
@@ -139,7 +133,7 @@ object SparkVisualizer {
     predictTemperature(temperatures, location)
 
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
-    import implicits.locationsGeneratorLong
+    import Implicits._
     visualize(360, 180)(toDs(temperatures), colors)
   }
 }
@@ -158,7 +152,7 @@ trait SparkVisualizer extends Visualizer {
 
   def visualize(width: Int, height: Int, transparency: Int)
                (temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
-    import SparkVisualizer.implicits.locationsGeneratorLong
+    import SparkVisualizer.Implicits._
     SparkVisualizer.visualize(width, height, transparency)(SparkVisualizer.toDs(temperatures), colors)
   }
 }

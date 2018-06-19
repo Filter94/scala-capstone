@@ -5,7 +5,7 @@ import java.time.LocalDate
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.functions.avg
-import SparkContextKeeper.spark
+import observatory.helpers.SparkContextKeeper.spark
 import org.apache.spark.sql.Dataset
 
 /**

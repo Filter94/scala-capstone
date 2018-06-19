@@ -34,14 +34,8 @@ trait InteractionTest extends FunSuite with Checkers {
 
   test("Generate tiles") {
     val colors: Seq[(Temperature, Color)] = Seq(
-      (60, Color(255, 255, 255)),
-      (32, Color(255, 0, 0)),
-      (12, Color(255, 255, 0)),
-      (0, Color(0, 255, 255)),
-      (-15, Color(0, 0, 255)),
-      (-27, Color(255, 0, 255)),
-      (-50, Color(33, 255, 107)),
-      (-60, Color(0, 0, 0)))
+      (-1.0, Color(255, 0, 0)),
+      (-100.0, Color(0, 0, 255)))
     def generateImage(year: Year, tile: Tile, data: Iterable[(Location, Temperature)]): Unit = {
       val image: Image = Interaction.tile(data, colors, tile)
       val directory = s"./target/temperatures/$year/${tile.zoom}/"
@@ -50,8 +44,10 @@ trait InteractionTest extends FunSuite with Checkers {
       val file = new File(directory + fileName)
       image.output(file)
     }
-    val temsByLocations = Extraction.locateTemperaturesSpark(1975, "/stations.csv", "/1975.csv")
-    val data = Extraction.locationYearlyAverageRecordsSpark(temsByLocations).collect().toIterable
+//    val temsByLocations = Extraction.locateTemperaturesSpark(1975, "/stations.csv", "/1975.csv")
+    val data = Seq(
+      (Location(45.0, -90.0), -1.0),
+      (Location(-45.0, 0.0), -100.0))
     val yearlyData = Iterable((1975, data))
     Interaction.generateTiles(yearlyData, generateImage)
   }

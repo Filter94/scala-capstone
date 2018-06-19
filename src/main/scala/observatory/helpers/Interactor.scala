@@ -1,6 +1,7 @@
-package observatory
+package observatory.helpers
 
 import com.sksamuel.scrimage.Image
+import observatory.{Color, Location, Temperature, Tile}
 
 import scala.math._
 

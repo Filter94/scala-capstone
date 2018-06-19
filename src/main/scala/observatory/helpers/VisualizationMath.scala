@@ -1,17 +1,19 @@
-package observatory
+package observatory.helpers
+
+import observatory.{Color, Location, Temperature}
 
 import scala.collection.GenIterable
 import scala.math._
 
 object VisualizationMath {
-  object implicits {
+  object Implicits {
     implicit def interpolateComponent(x1: Temperature, x2: Temperature, value: Temperature)(y1: Int, y2: Int): Int =
       math.round(y1 + ((y2 - y1) / (x2 - x1) * (value - x1))).toInt
 
     implicit def tempDistance(a: Temperature, b: Temperature): Distance = abs(a - b)
   }
 
-  import implicits._
+  import Implicits._
   private val R = 6372.8
   val COLOR_MAX = 255
   type Distance = Double

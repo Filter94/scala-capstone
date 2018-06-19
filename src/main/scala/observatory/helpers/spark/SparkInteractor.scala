@@ -1,6 +1,8 @@
-package observatory
+package observatory.helpers.spark
 
 import com.sksamuel.scrimage.Image
+import observatory._
+import observatory.helpers.Interactor
 
 import scala.math.{log, pow}
 

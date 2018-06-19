@@ -1,6 +1,8 @@
-package observatory
+package observatory.helpers.par
 
 import com.sksamuel.scrimage.Image
+import observatory._
+import observatory.helpers.Interactor
 
 import scala.math._
 
@@ -13,7 +15,7 @@ trait ParInteractor extends Interactor with ParVisualizer {
 
   def visualizeTile(IMAGE_SIZE_X: Int, IMAGE_SIZE_Y: Int)(temperatures: Iterable[(Location, Temperature)],
                                                           colors: Iterable[(Temperature, Color)], tile: Tile): Image = {
-    import implicits.computePixels
+    import Implicits.computePixels
     implicit def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
       val latIdx = i / WIDTH
       val lonIdx = i % WIDTH

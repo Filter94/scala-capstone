@@ -1,5 +1,7 @@
 package observatory
 
+import observatory.helpers.par.ParInteractor
+
 import math._
 
 /**

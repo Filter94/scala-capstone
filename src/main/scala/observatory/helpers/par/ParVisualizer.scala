@@ -1,14 +1,16 @@
-package observatory
+package observatory.helpers.par
 
 import com.sksamuel.scrimage.{Image, Pixel}
+import observatory._
+import observatory.helpers.VisualizationMath._
+import observatory.helpers.{VisualizationMath, Visualizer}
 
 import scala.collection.GenIterable
 import scala.collection.parallel.ParIterable
 import scala.math.max
-import VisualizationMath._
 
 trait ParVisualizer extends Visualizer {
-  object implicits {
+  object Implicits {
     implicit def computePixels(temps: Iterable[(Location, Temperature)], locations: GenIterable[Location],
                                colors: Iterable[(Temperature, Color)], transparency: Int): Array[Pixel] = {
       val tempsInterpolated: ParIterable[Temperature] = predictTemperatures(temps, locations)
@@ -35,13 +37,13 @@ trait ParVisualizer extends Visualizer {
     }
   }
 
-  import implicits._
+  import Implicits._
 
   val epsilon = 1E-5
   val DEFAULT_P = 3.0
 
   def interpolateColor(points: GenIterable[(Temperature, Color)], value: Temperature): Color = {
-    import VisualizationMath.implicits.interpolateComponent
+    import VisualizationMath.Implicits.interpolateComponent
     VisualizationMath.interpolateColor(points, value)
   }
 
