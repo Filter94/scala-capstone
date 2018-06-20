@@ -17,7 +17,6 @@ trait SparkInteractor extends Interactor with SparkVisualizer {
   def visualizeTile(sizeX: Int, sizeY: Int)(temperatures: Iterable[(Location, Temperature)],
                                                       colors: Iterable[(Temperature, Color)], tile: Tile): Image = {
     val upscaleFactor = 2
-
     visualizeTile(sizeX / upscaleFactor, sizeY / upscaleFactor, 127, tile)(temperatures, colors)
       .scale(upscaleFactor)
   }

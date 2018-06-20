@@ -11,9 +11,9 @@ import scala.math.max
 
 trait ParVisualizer extends Visualizer {
   object Implicits {
-    implicit def computePixels(temps: Iterable[(Location, Temperature)], locations: GenIterable[Location],
+    implicit def computePixels(temps: Iterable[(Location, Temperature)], locations: ParIterable[Location],
                                colors: Iterable[(Temperature, Color)], transparency: Int): Array[Pixel] = {
-      val tempsInterpolated: ParIterable[Temperature] = predictTemperatures(temps, locations)
+      val tempsInterpolated = predictTemperatures(temps, locations)
       val pixels = new Array[Pixel](locations.size)
       for {
         (temp, i) <- tempsInterpolated.zipWithIndex.par
@@ -57,9 +57,9 @@ trait ParVisualizer extends Visualizer {
   def visualize(WIDTH: Int, HEIGHT: Int, transparency: Int = COLOR_MAX)
                (temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)])
                (implicit locationsGenerator: (Int, Int) => Int => Location,
-                computePixels: (Iterable[(Location, Temperature)], GenIterable[Location],
+                computePixels: (Iterable[(Location, Temperature)], ParIterable[Location],
                   Iterable[(Temperature, Color)], Int) => Array[Pixel]): Image = {
-    val locations = Range(0, WIDTH * HEIGHT)
+    val locations = Range(0, WIDTH * HEIGHT).par
       .map(i => locationsGenerator(WIDTH, HEIGHT)(i))
     val pixels = computePixels(temperatures, locations, colors, transparency)
     Image(WIDTH, HEIGHT, pixels)

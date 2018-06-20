@@ -2,12 +2,11 @@ package observatory
 
 import java.time.LocalDate
 
-import org.scalactic.{Equality, TolerantNumerics}
+import org.scalactic.Tolerance._
 import org.scalatest.FunSuite
 
 trait ExtractionTest extends FunSuite {
-  implicit val equality: Equality[Temperature] = TolerantNumerics.tolerantDoubleEquality(0.001)
-
+  private val epsilon = 1E-05
   test("Extraction works correct on trivial data") {
     val res =
       Extraction.locateTemperatures(2018, "/test_stations.csv", "/test_temp.csv")
@@ -21,7 +20,7 @@ trait ExtractionTest extends FunSuite {
         case ((date, location, temp), i) =>
           res(i)._1 === date &&
             res(i)._2 === location &&
-            res(i)._3 === temp
+            res(i)._3 === temp +- epsilon
       })
   }
 
@@ -40,7 +39,7 @@ trait ExtractionTest extends FunSuite {
 
   test("Average temperature ends in reasonable time on big data") {
     val res =
-      Extraction.locateTemperaturesSpark(2018, "/stations.csv", "/1975_bacup.csv").persist()
+      Extraction.locateTemperaturesSpark(2018, "/stations.csv", "/1975.csv").persist()
     assert(res.count() != 0)
     val avg = Extraction.locationYearlyAverageRecordsSpark(res)
     assert(avg.count() != 0)

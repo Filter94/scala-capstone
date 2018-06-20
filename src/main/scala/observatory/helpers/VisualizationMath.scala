@@ -14,6 +14,7 @@ object VisualizationMath {
   }
 
   import Implicits._
+  val epsilon = 1E-5
   private val R = 6372.8
   val COLOR_MAX = 255
   type Distance = Double

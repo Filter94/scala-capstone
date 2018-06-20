@@ -20,9 +20,9 @@ object Interaction extends ParInteractor {
     generateImage: (Year, Tile, Data) => Unit
   ): Unit = {
     for {
-      (year, data) <- yearlyData
-      zoomLevel <- Range(0, 4)
-      tileX <- Range(0, pow(2, zoomLevel).toInt)
+      (year, data) <- yearlyData.par
+      zoomLevel <- Range(0, 4).par
+      tileX <- Range(0, pow(2, zoomLevel).toInt).par
       tileY <- Range(0, pow(2, zoomLevel).toInt).par
     } {
 //      println(s"Processing year $year, zoom level: $zoomLevel, x: $tileX, y: $tileY")

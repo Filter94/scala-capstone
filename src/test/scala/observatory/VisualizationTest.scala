@@ -1,16 +1,11 @@
 package observatory
 
-
-import java.io.File
-
-import org.scalactic.{Equality, TolerantNumerics}
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
+import org.scalactic.Tolerance._
 
 trait VisualizationTest extends FunSuite with Checkers {
-  val epsilon = 1e-4d
-
-  implicit val doubleEq: Equality[Temperature] = TolerantNumerics.tolerantDoubleEquality(epsilon)
+  private val epsilon = 1E-05
 
   test("Prediction of an known point returns the point") {
     val thePoint = Location(37.35, -78.433)
@@ -20,7 +15,7 @@ trait VisualizationTest extends FunSuite with Checkers {
       (Location(37.358, -78.438), 1.0))
 
     val predictedTemp = Visualization.predictTemperature(temps, thePoint)
-    assert(predictedTemp === theTemp)
+    assert(predictedTemp === theTemp +- epsilon)
   }
 
   test("Prediction of unknown point returns a new point") {
@@ -31,7 +26,7 @@ trait VisualizationTest extends FunSuite with Checkers {
       (Location(0, 10), 20))
 
     val predictedTemp = Visualization.predictTemperature(temps, thePoint)
-    assert(predictedTemp === expectedTemp)
+    assert(predictedTemp === expectedTemp +- epsilon)
   }
 
   test("Interpolation of an known point returns the point") {
@@ -77,8 +72,8 @@ trait VisualizationTest extends FunSuite with Checkers {
     assert(Visualization.interpolateColor(colors, 50.0) === Color(0, 0, 0))
     assert(Visualization.interpolateColor(colors, 0.0) === Color(255, 0, 128))
     assert(Visualization.interpolateColor(colors, 200.0) === Color(255, 255, 255))
-    assert(Visualization.interpolateColor(colors, 75.0) === Color(127, 127, 127))
-    assert(Visualization.interpolateColor(colors, 25.0) === Color(127, 0, 64))
+    assert(Visualization.interpolateColor(colors, 75.0) === Color(128, 128, 128))
+    assert(Visualization.interpolateColor(colors, 25.0) === Color(128, 0, 64))
   }
 
   test("Interpolation works correct on unsorted data") {
@@ -148,17 +143,10 @@ trait VisualizationTest extends FunSuite with Checkers {
       (17, Color(13, 13, 13)))
 
     val image = Visualization.visualize(temps, colors)
-    assert(image.forall { case (_, _, pixel) => pixel.productIterator.exists(component => component != 0) })
+    assert(image.forall { case (_, _, pixel) => pixel.productIterator.exists(component => component !== 0) })
   }
 
   test("Test locations on image") {
-    val directory = "./target/temperatures/1/test/"
-    val fileName = "test.png"
-    val file = new File(directory + fileName)
-    if (!file.createNewFile()) {
-      new File(directory).mkdirs()
-    }
-    assert(file.canWrite)
     val temps: Seq[(Location, Temperature)] = Seq(
       (Location(90, -180), 0),
       (Location(90, 179), 20),
@@ -171,9 +159,9 @@ trait VisualizationTest extends FunSuite with Checkers {
       (20, Color(0, 0, 100)))
 
     val image = Visualization.visualize(temps, colors)
-    image.output(file)
-    assert(image.pixel((0, 90)).blue == 0)
-    assert(image.pixel((359, 90)).blue == 100)
+//    image.output("6 locations.png")
+    assert(image.pixel((0, 90)).blue === 0)
+    assert(image.pixel((359, 90)).blue === 100)
   }
 
   test("Image test") {
@@ -184,7 +172,7 @@ trait VisualizationTest extends FunSuite with Checkers {
       (-1.0, Color(255, 0, 0)),
       (-100.0, Color(0, 0, 255)))
     val image = Visualization.visualize(temps, colors)
-    image.output("pepsi.png")
+//    image.output("pepsi.png")
   }
 
   test("Image test ends in reasonable time") {
@@ -197,9 +185,9 @@ trait VisualizationTest extends FunSuite with Checkers {
       (-27, Color(255, 0, 255)),
       (-50, Color(33, 255, 107)),
       (-60, Color(0, 0, 0)))
-    val temperaturesByDate = Extraction.locateTemperaturesSpark(1976, "/stations.csv", "/1975.csv")
+    val temperaturesByDate = Extraction.locateTemperaturesSpark(1975, "/stations.csv", "/1975.csv")
     val temperatures = Extraction.locationYearlyAverageRecordsSpark(temperaturesByDate).collect().toIterable
     val image = Visualization.visualize(temperatures, colors)
-    image.output("par test.png")
+//    image.output("big data test.png")
   }
 }

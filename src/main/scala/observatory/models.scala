@@ -4,9 +4,9 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.{DoubleType, IntegerType, StructField, StructType}
 
 import scala.math._
+import observatory.helpers.VisualizationMath.epsilon
 
 object Location {
-  val epsilon = 1E-5
 
   def equals(a: Location, b: Location): Boolean = {
     math.abs(a.lon - b.lon) < epsilon && math.abs(a.lat - b.lat) < epsilon
@@ -25,13 +25,33 @@ object Location {
   }
 }
 
+case class GridLocationsSquare(topLeft: GridLocation, topRight: GridLocation,
+                               bottomLeft: GridLocation, bottomRight: GridLocation)
+
 /**
   * Introduced in Week 1. Represents a location on the globe.
   *
   * @param lat Degrees of latitude, -90 ≤ lat ≤ 90
   * @param lon Degrees of longitude, -180 ≤ lon ≤ 180
   */
-case class Location(lat: Double, lon: Double)
+case class Location(lat: Double, lon: Double) {
+  lazy val gridLocation = GridLocation(math.round(lat).toInt, math.round(lon).toInt)
+  // top left, top right, bottom left, bottom right
+  lazy val surroundingGridLocations: GridLocationsSquare = {
+    GridLocationsSquare(
+      GridLocation(math.ceil(lat).toInt, math.floor(lon).toInt),
+      GridLocation(math.ceil(lat).toInt, math.ceil(lon).toInt),
+      GridLocation(math.floor(lat).toInt, math.floor(lon).toInt),
+      GridLocation(math.floor(lat).toInt, math.ceil(lon).toInt))
+  }
+  lazy val cellPoint: CellPoint = {
+    val lonDelta = surroundingGridLocations.bottomRight.lon - surroundingGridLocations.topLeft.lon
+    val latDelta = surroundingGridLocations.topLeft.lat - surroundingGridLocations.bottomRight.lat
+    val lonFraction = max(min((lon - surroundingGridLocations.topLeft.lon) / lonDelta, 1), 0)
+    val latFraction = max(min((lat - surroundingGridLocations.topLeft.lat) / latDelta, 1), 0)
+    CellPoint(lonFraction, latFraction)
+  }
+}
 
 object TempByLocation {
   def convertIterable(iter: Iterable[(Location, Temperature)]): Iterable[TempByLocation] =
@@ -67,7 +87,9 @@ case class Tile(x: Int, y: Int, zoom: Int) {
   * @param lat Circle of latitude in degrees, -89 ≤ lat ≤ 90
   * @param lon Line of longitude in degrees, -180 ≤ lon ≤ 179
   */
-case class GridLocation(lat: Int, lon: Int)
+case class GridLocation(lat: Int, lon: Int) {
+   lazy val toLocation = Location(lat, lon)
+}
 
 /**
   * Introduced in Week 5. Represents a point inside of a grid cell.

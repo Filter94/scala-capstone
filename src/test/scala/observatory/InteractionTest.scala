@@ -1,8 +1,5 @@
 package observatory
 
-import java.io.File
-
-import com.sksamuel.scrimage.Image
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 
@@ -29,26 +26,6 @@ trait InteractionTest extends FunSuite with Checkers {
       (-100.0, Color(0, 0, 255)))
     val tile = Tile(0, 0, 0)
     val image = Interaction.tile(temps, colors, tile)
-    image.output(s"tile.png")
-  }
-
-  test("Generate tiles") {
-    val colors: Seq[(Temperature, Color)] = Seq(
-      (-1.0, Color(255, 0, 0)),
-      (-100.0, Color(0, 0, 255)))
-    def generateImage(year: Year, tile: Tile, data: Iterable[(Location, Temperature)]): Unit = {
-      val image: Image = Interaction.tile(data, colors, tile)
-      val directory = s"./target/temperatures/$year/${tile.zoom}/"
-      new File(directory).mkdirs()
-      val fileName = s"${tile.x}-${tile.y}.png"
-      val file = new File(directory + fileName)
-      image.output(file)
-    }
-//    val temsByLocations = Extraction.locateTemperaturesSpark(1975, "/stations.csv", "/1975.csv")
-    val data = Seq(
-      (Location(45.0, -90.0), -1.0),
-      (Location(-45.0, 0.0), -100.0))
-    val yearlyData = Iterable((1975, data))
-    Interaction.generateTiles(yearlyData, generateImage)
+//    image.output(s"tile.png")
   }
 }
