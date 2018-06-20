@@ -17,7 +17,7 @@ object Location {
   }
 
   def fromRow[T](row: Row, key: T): Location = {
-    val locationRow: Row = key match {
+    def locationRow: Row = key match {
       case field: String => row.getAs[Row](field)
       case idx: Int => row.getAs[Row](idx)
     }
@@ -35,16 +35,16 @@ case class GridLocationsSquare(topLeft: GridLocation, topRight: GridLocation,
   * @param lon Degrees of longitude, -180 ≤ lon ≤ 180
   */
 case class Location(lat: Double, lon: Double) {
-  lazy val gridLocation = GridLocation(math.round(lat).toInt, math.round(lon).toInt)
+  def gridLocation = GridLocation(math.round(lat).toInt, math.round(lon).toInt)
   // top left, top right, bottom left, bottom right
-  lazy val surroundingGridLocations: GridLocationsSquare = {
+  def surroundingGridLocations: GridLocationsSquare = {
     GridLocationsSquare(
       GridLocation(math.ceil(lat).toInt, math.floor(lon).toInt),
       GridLocation(math.ceil(lat).toInt, math.ceil(lon).toInt),
       GridLocation(math.floor(lat).toInt, math.floor(lon).toInt),
       GridLocation(math.floor(lat).toInt, math.ceil(lon).toInt))
   }
-  lazy val cellPoint: CellPoint = {
+  def cellPoint: CellPoint = {
     val lonDelta = surroundingGridLocations.bottomRight.lon - surroundingGridLocations.topLeft.lon
     val latDelta = surroundingGridLocations.topLeft.lat - surroundingGridLocations.bottomRight.lat
     val lonFraction = max(min((lon - surroundingGridLocations.topLeft.lon) / lonDelta, 1), 0)
@@ -72,7 +72,7 @@ case class LocationWindow(topLeft: Location, bottomRight: Location)
   * @param zoom Zoom level, 0 ≤ zoom ≤ 19
   */
 case class Tile(x: Int, y: Int, zoom: Int) {
-  lazy val location: Location = {
+  def location: Location = {
     val n = pow(2.0, zoom)
     val lon = x / n * 360.0 - 180.0
     val lat = toDegrees(atan(sinh(Pi * (1 - 2 * (y / n)))))
@@ -88,7 +88,7 @@ case class Tile(x: Int, y: Int, zoom: Int) {
   * @param lon Line of longitude in degrees, -180 ≤ lon ≤ 179
   */
 case class GridLocation(lat: Int, lon: Int) {
-   lazy val toLocation = Location(lat, lon)
+   def location: Location = Location(lat, lon)
 }
 
 /**

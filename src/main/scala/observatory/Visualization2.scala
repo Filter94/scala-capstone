@@ -3,6 +3,7 @@ package observatory
 import com.sksamuel.scrimage.{Image, Pixel}
 import observatory.helpers.VisualizationMath
 import observatory.helpers.par.ParVisualizer
+import observatory.helpers.spark.SparkVisualizer
 
 import scala.collection.parallel.ParIterable
 import scala.math.{log, pow}
@@ -10,7 +11,7 @@ import scala.math.{log, pow}
 /**
   * 5th milestone: value-added information visualization
   */
-object Visualization2 extends ParVisualizer {
+object Visualization2 extends SparkVisualizer {
 
   /**
     * @param point (x, y) coordinates of a point in the grid cell
@@ -78,6 +79,6 @@ object Visualization2 extends ParVisualizer {
       zoomedTile.location
     }
 
-    visualize(width, height, transparency)(Iterable(), colors).scale(upscaleFactor)
+    visualizeTile(width, height, transparency, tile)(Iterable(), colors).scale(upscaleFactor)
   }
 }

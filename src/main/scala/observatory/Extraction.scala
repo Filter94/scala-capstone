@@ -4,7 +4,6 @@ import java.nio.file.Paths
 import java.time.LocalDate
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.functions.avg
 import observatory.helpers.SparkContextKeeper.spark
 import observatory.helpers.spark.Utilities
 import org.apache.spark.sql.Dataset

@@ -135,7 +135,7 @@ object SparkVisualizer {
     predictTemperatures(Utilities.toCaseClassDs(temperatures), spark.createDataset(List(location))).first()._2
 
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
-    visualize(360, 180)(Utilities.toCaseClassDs(temperatures), colors)
+    visualize(360, 180, COLOR_MAX)(Utilities.toCaseClassDs(temperatures), colors)
   }
 }
 

@@ -20,7 +20,7 @@ class Grid(temperatures: Iterable[(Location, Temperature)]) {
     if (!discreteTempsCache(i).isNaN) {
       discreteTempsCache(i)
     } else {
-      val res = Visualization.predictTemperature(temperatures, location.toLocation)
+      val res = Visualization.predictTemperature(temperatures, location.location)
       discreteTempsCache(i) = res
       res
     }
