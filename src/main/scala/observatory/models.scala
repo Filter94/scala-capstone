@@ -23,6 +23,26 @@ object Location {
     }
     fromLocationRow(locationRow)
   }
+
+  def gridLocation(location: Location) = GridLocation(math.round(location.lat).toInt, math.round(location.lon).toInt)
+  // top left, top right, bottom left, bottom right
+  def surroundingGridLocations(location: Location): GridLocationsSquare = {
+    val lat = location.lat
+    val lon = location.lon
+    GridLocationsSquare(
+      GridLocation(math.ceil(lat).toInt, math.floor(lon).toInt),
+      GridLocation(math.ceil(lat).toInt, math.ceil(lon).toInt),
+      GridLocation(math.floor(lat).toInt, math.floor(lon).toInt),
+      GridLocation(math.floor(lat).toInt, math.ceil(lon).toInt))
+  }
+  def cellPoint(location: Location): CellPoint = {
+    val square = surroundingGridLocations(location)
+    val lonDelta = square.bottomRight.lon - square.topLeft.lon
+    val latDelta = square.topLeft.lat - square.bottomRight.lat
+    val lonFraction = max(min((location.lon - square.topLeft.lon) / lonDelta, 1), 0)
+    val latFraction = max(min((location.lat - square.topLeft.lat) / latDelta, 1), 0)
+    CellPoint(lonFraction, latFraction)
+  }
 }
 
 case class GridLocationsSquare(topLeft: GridLocation, topRight: GridLocation,
@@ -34,29 +54,7 @@ case class GridLocationsSquare(topLeft: GridLocation, topRight: GridLocation,
   * @param lat Degrees of latitude, -90 ≤ lat ≤ 90
   * @param lon Degrees of longitude, -180 ≤ lon ≤ 180
   */
-case class Location(lat: Double, lon: Double) {
-  def gridLocation = GridLocation(math.round(lat).toInt, math.round(lon).toInt)
-  // top left, top right, bottom left, bottom right
-  def surroundingGridLocations: GridLocationsSquare = {
-    GridLocationsSquare(
-      GridLocation(math.ceil(lat).toInt, math.floor(lon).toInt),
-      GridLocation(math.ceil(lat).toInt, math.ceil(lon).toInt),
-      GridLocation(math.floor(lat).toInt, math.floor(lon).toInt),
-      GridLocation(math.floor(lat).toInt, math.ceil(lon).toInt))
-  }
-  def cellPoint: CellPoint = {
-    val lonDelta = surroundingGridLocations.bottomRight.lon - surroundingGridLocations.topLeft.lon
-    val latDelta = surroundingGridLocations.topLeft.lat - surroundingGridLocations.bottomRight.lat
-    val lonFraction = max(min((lon - surroundingGridLocations.topLeft.lon) / lonDelta, 1), 0)
-    val latFraction = max(min((lat - surroundingGridLocations.topLeft.lat) / latDelta, 1), 0)
-    CellPoint(lonFraction, latFraction)
-  }
-}
-
-object TempByLocation {
-  def convertIterable(iter: Iterable[(Location, Temperature)]): Iterable[TempByLocation] =
-    iter.map { case (location, temperature) => TempByLocation(location, temperature) }
-}
+case class Location(lat: Double, lon: Double)
 
 case class TempByLocation(location: Location, temperature: Temperature)
 
@@ -78,6 +76,10 @@ case class Tile(x: Int, y: Int, zoom: Int) {
     val lat = toDegrees(atan(sinh(Pi * (1 - 2 * (y / n)))))
     Location(lat, lon)
   }
+}
+
+object GridLocation {
+  def location(gridLocation: GridLocation): Location = Location(gridLocation.lat, gridLocation.lon)
 }
 
 /**

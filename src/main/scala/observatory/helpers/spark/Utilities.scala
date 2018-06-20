@@ -21,7 +21,7 @@ object Utilities {
   def toTupleDs(data: Iterable[(Location, Temperature)]): Dataset[(Location, Temperature)] =
     spark.createDataset(data.toSeq)
 
-  def average(locationTemps: DataFrame): Dataset[(Location, Temperature)] = {
+  def average(locationTemps: Dataset[TempByLocation]): Dataset[(Location, Temperature)] = {
     locationTemps
     .groupBy($"location")
     .agg(avg($"temperature").as("temp"))

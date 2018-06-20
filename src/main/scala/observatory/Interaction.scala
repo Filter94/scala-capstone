@@ -1,14 +1,13 @@
 package observatory
 
 import observatory.helpers.par.ParInteractor
-import observatory.helpers.spark.SparkInteractor
 
 import math._
 
 /**
   * 3rd milestone: interactive visualization
   */
-object Interaction extends SparkInteractor {
+object Interaction extends ParInteractor {
   /**
     * Generates all the tiles for zoom levels 0 to 3 (included), for all the given years.
     * @param yearlyData Sequence of (year, data), where `data` is some data associated with

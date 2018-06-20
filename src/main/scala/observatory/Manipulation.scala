@@ -32,7 +32,7 @@ object Manipulation {
     }
     val locationTempDs = records.map { case (location, temp) =>
       TempByLocation(location, temp)
-    }.toDF()
+    }.toDS()
     val averages = Utilities.average(locationTempDs).collect()
     makeGrid(averages)
   }

@@ -5,13 +5,13 @@ import java.time.LocalDate
 
 import org.apache.spark.rdd.RDD
 import observatory.helpers.SparkContextKeeper.spark
-import observatory.helpers.spark.Utilities
-import org.apache.spark.sql.Dataset
+import org.apache.spark.sql.functions.avg
 
 /**
   * 1st milestone: data extraction
   */
 object Extraction {
+
   import spark.implicits._
 
   /**
@@ -74,9 +74,12 @@ object Extraction {
     locationYearlyAverageRecordsSpark(spark.sparkContext.parallelize(records.toSeq)).collect()
   }
 
-  def locationYearlyAverageRecordsSpark(records: RDD[(LocalDate, Location, Temperature)]): Dataset[(Location, Temperature)] = {
+  def locationYearlyAverageRecordsSpark(records: RDD[(LocalDate, Location, Temperature)]): RDD[(Location, Temperature)] = {
     val locationTempRdd = records.map { case (_, location, temp) =>
       TempByLocation(location, temp) }
-    Utilities.average(locationTempRdd.toDF())
+    val recDataset = spark.sqlContext.createDataFrame(locationTempRdd)
+    recDataset.groupBy($"location")
+      .agg(avg($"temperature").as("average temp"))
+      .select($"location".as[Location], $"average temp".as[Temperature]).rdd
   }
 }
