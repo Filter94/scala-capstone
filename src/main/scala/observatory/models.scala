@@ -27,20 +27,17 @@ object Location {
   def gridLocation(location: Location) = GridLocation(math.round(location.lat).toInt, math.round(location.lon).toInt)
   // top left, top right, bottom left, bottom right
   def surroundingGridLocations(location: Location): GridLocationsSquare = {
-    val lat = location.lat
-    val lon = location.lon
+    val lat = location.lat.toInt
+    val lon = location.lon.toInt
     GridLocationsSquare(
-      GridLocation(math.ceil(lat).toInt, math.floor(lon).toInt),
-      GridLocation(math.ceil(lat).toInt, math.ceil(lon).toInt),
-      GridLocation(math.floor(lat).toInt, math.floor(lon).toInt),
-      GridLocation(math.floor(lat).toInt, math.ceil(lon).toInt))
+      GridLocation(lat, lon + 1),
+      GridLocation(lat, lon),
+      GridLocation(lat + 1, lon + 1),
+      GridLocation(lat + 1, lon))
   }
   def cellPoint(location: Location): CellPoint = {
-    val square = surroundingGridLocations(location)
-    val lonDelta = square.bottomRight.lon - square.topLeft.lon
-    val latDelta = square.topLeft.lat - square.bottomRight.lat
-    val lonFraction = max(min((location.lon - square.topLeft.lon) / lonDelta, 1), 0)
-    val latFraction = max(min((location.lat - square.topLeft.lat) / latDelta, 1), 0)
+    val lonFraction = location.lon - location.lon.toInt
+    val latFraction = math.rint(location.lat) - location.lat
     CellPoint(lonFraction, latFraction)
   }
 }
@@ -89,9 +86,7 @@ object GridLocation {
   * @param lat Circle of latitude in degrees, -89 ≤ lat ≤ 90
   * @param lon Line of longitude in degrees, -180 ≤ lon ≤ 179
   */
-case class GridLocation(lat: Int, lon: Int) {
-   def location: Location = Location(lat, lon)
-}
+case class GridLocation(lat: Int, lon: Int)
 
 /**
   * Introduced in Week 5. Represents a point inside of a grid cell.
@@ -117,7 +112,7 @@ case class Id(stnId: Option[STN], wbanId: Option[WBAN]) {
 object TemperatureRow {
   type FlatTemp = (Option[STN], Option[WBAN], Month, Day, Temperature)
 
-  def flatSchema: StructType = StructType(
+  val flatSchema: StructType = StructType(
     Seq(
       StructField("stn", IntegerType, nullable = false),
       StructField("wban", IntegerType, nullable = true),
@@ -148,7 +143,7 @@ case class TemperatureRow(id: Id, month: Month, day: Day, temp: Temperature) {
 object StationRow {
   type FlatStation = (Option[STN], Option[WBAN], Double, Double)
 
-  def flatSchema: StructType = StructType(
+  val flatSchema: StructType = StructType(
     Seq(
       StructField("stn", IntegerType, nullable = true),
       StructField("wban", IntegerType, nullable = true),

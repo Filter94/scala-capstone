@@ -5,7 +5,6 @@ import java.time.LocalDate
 
 import org.apache.spark.rdd.RDD
 import observatory.helpers.SparkContextKeeper.spark
-import org.apache.spark.sql.functions.avg
 
 /**
   * 1st milestone: data extraction
@@ -70,16 +69,15 @@ object Extraction {
     * @param records A sequence containing triplets (date, location, temperature)
     * @return A sequence containing, for each location, the average temperature over the year.
     */
-  def locationYearlyAverageRecords(records: Iterable[(LocalDate, Location, Temperature)]): Iterable[(Location, Temperature)] = {
-    locationYearlyAverageRecordsSpark(spark.sparkContext.parallelize(records.toSeq)).collect()
-  }
-
-  def locationYearlyAverageRecordsSpark(records: RDD[(LocalDate, Location, Temperature)]): RDD[(Location, Temperature)] = {
-    val locationTempRdd = records.map { case (_, location, temp) =>
-      TempByLocation(location, temp) }
-    val recDataset = spark.sqlContext.createDataFrame(locationTempRdd)
-    recDataset.groupBy($"location")
-      .agg(avg($"temperature").as("average temp"))
-      .select($"location".as[Location], $"average temp".as[Temperature]).rdd
+  def locationYearlyAverageRecords(records: Iterable[(LocalDate, Location, Double)]): Iterable[(Location, Double)] = {
+    records
+        .map{case (_, location, temperature) => TempByLocation(location, temperature)}
+      .par
+      .groupBy(_.location)
+      .mapValues {
+        location =>
+          location.foldLeft(0.0)(
+            (t, r) => t + r.temperature) / location.size
+      }.seq
   }
 }

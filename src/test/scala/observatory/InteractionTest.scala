@@ -26,6 +26,7 @@ trait InteractionTest extends FunSuite with Checkers {
       (-100.0, Color(0, 0, 255)))
     val tile = Tile(0, 0, 0)
     val image = Interaction.tile(temps, colors, tile)
-//    image.output(s"tile.png")
+    image.output(s"tile.png")
   }
+
 }

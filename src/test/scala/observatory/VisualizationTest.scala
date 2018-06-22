@@ -1,11 +1,26 @@
 package observatory
 
+
+import java.io.File
+
+import org.scalactic.{Equality, TolerantNumerics}
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 import org.scalactic.Tolerance._
 
 trait VisualizationTest extends FunSuite with Checkers {
   private val epsilon = 1E-05
+
+  val tempColors: Seq[(Double, Color)] = Seq(
+    (60, Color(red = 255, green = 255, blue = 255)),
+    (32, Color(red = 255, green = 0, blue = 0)),
+    (12, Color(red = 255, green = 255, blue = 0)),
+    (0, Color(red = 0, green = 255, blue = 255)),
+    (-15, Color(red = 0, green = 0, blue = 255)),
+    (-27, Color(red = 255, green = 0, blue = 255)),
+    (-50, Color(red = 33, green = 0, blue = 107)),
+    (-60, Color(red = 0, green = 0, blue = 0))
+  )
 
   test("Prediction of an known point returns the point") {
     val thePoint = Location(37.35, -78.433)
@@ -159,7 +174,7 @@ trait VisualizationTest extends FunSuite with Checkers {
       (20, Color(0, 0, 100)))
 
     val image = Visualization.visualize(temps, colors)
-//    image.output("6 locations.png")
+    image.output("6 locations.png")
     assert(image.pixel((0, 90)).blue === 0)
     assert(image.pixel((359, 90)).blue === 100)
   }
@@ -172,7 +187,7 @@ trait VisualizationTest extends FunSuite with Checkers {
       (-1.0, Color(255, 0, 0)),
       (-100.0, Color(0, 0, 255)))
     val image = Visualization.visualize(temps, colors)
-//    image.output("pepsi.png")
+    image.output("pepsi.png")
   }
 
   test("Image test ends in reasonable time") {
@@ -185,9 +200,9 @@ trait VisualizationTest extends FunSuite with Checkers {
       (-27, Color(255, 0, 255)),
       (-50, Color(33, 255, 107)),
       (-60, Color(0, 0, 0)))
-    val temperaturesByDate = Extraction.locateTemperaturesSpark(1975, "/stations.csv", "/1975.csv")
-    val temperatures = Extraction.locationYearlyAverageRecordsSpark(temperaturesByDate).collect().toIterable
+    val temperaturesByDate = Extraction.locateTemperatures(1975, "/stations.csv", "/1975.csv")
+    val temperatures = Extraction.locationYearlyAverageRecords(temperaturesByDate)
     val image = Visualization.visualize(temperatures, colors)
-//    image.output("big data test.png")
+    image.output("big data test.png")
   }
 }

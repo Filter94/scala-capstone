@@ -9,11 +9,11 @@ import scala.collection.GenIterable
 import scala.collection.parallel.ParIterable
 import scala.math.max
 
-trait ParVisualizer extends Visualizer {
+object ParVisualizer extends Visualizer {
   object Implicits {
-    implicit def computePixels(temps: Iterable[(Location, Temperature)], locations: ParIterable[Location],
+    implicit def computePixels(temps: Iterable[(Location, Temperature)], locations: GenIterable[Location],
                                colors: Iterable[(Temperature, Color)], transparency: Int): Array[Pixel] = {
-      val tempsInterpolated = predictTemperatures(temps, locations)
+      val tempsInterpolated: ParIterable[Temperature] = predictTemperatures(temps, locations)
       val pixels = new Array[Pixel](locations.size)
       for {
         (temp, i) <- tempsInterpolated.zipWithIndex.par
@@ -24,7 +24,7 @@ trait ParVisualizer extends Visualizer {
       pixels
     }
 
-    implicit def locationsGeneratorInt(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
+    implicit def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
       val latStart: Double = 90
       val latLength: Double = 180
       val lonStart: Double = -180

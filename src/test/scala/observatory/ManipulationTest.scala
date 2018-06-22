@@ -1,6 +1,5 @@
 package observatory
 
-import observatory.helpers.Grid
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 import org.scalactic.Tolerance._
@@ -38,8 +37,8 @@ trait ManipulationTest extends FunSuite with Checkers {
       (Location(-89, 179), 30),
       (Location(0, -180), 10),
       (Location(0, 179), 30))
-    val normalGrid = Grid(tempsNormal)
-    val deviationGrid = Manipulation.deviation(newTemps, normalGrid.getTemperature)
+    val normalGrid = Manipulation.makeGrid(tempsNormal)
+    val deviationGrid = Manipulation.deviation(newTemps, normalGrid)
     assert(deviationGrid(GridLocation(0, 0)) === (10.0 +- epsilon))
     assert(deviationGrid(GridLocation(0, -180)) === (10.0 +- epsilon))
     assert(deviationGrid(GridLocation(0, 179)) === (10.0 +- epsilon))

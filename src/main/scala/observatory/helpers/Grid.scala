@@ -1,32 +1,22 @@
 package observatory.helpers
 
-import observatory.{GridLocation, Location, Temperature, Visualization}
+import observatory.{GridLocation, Location, Temperature}
+import observatory.helpers.par.ParVisualizer.predictTemperature
+
+import scala.collection.concurrent.TrieMap
 
 object Grid {
   def apply(temperatures: Iterable[(Location, Temperature)]): Grid = new Grid(temperatures)
 }
 
 class Grid(temperatures: Iterable[(Location, Temperature)]) {
-  private val WIDTH = 360
-  private val HEIGHT = 180
-  private val discreteTempsCache: Array[Temperature] = Array.fill(WIDTH * HEIGHT)(Double.NaN)
-
-  def locationToIndex(gridLocation: GridLocation): Int = {
-    (90 - gridLocation.lat) * WIDTH + (180 + gridLocation.lon)
-  }
+  private val discreteTempsCache: TrieMap[GridLocation, Temperature] = TrieMap()
 
   def getTemperature(location: GridLocation): Temperature = {
-    val i = locationToIndex(location)
-    if (!discreteTempsCache(i).isNaN) {
-      discreteTempsCache(i)
-    } else {
-      val res = Visualization.predictTemperature(temperatures, location.location)
-      discreteTempsCache(i) = res
-      res
-    }
-  }
-
-  def combine(location: GridLocation, temperature: => Temperature, f: (Temperature, Temperature) => Temperature): Temperature = {
-    f(getTemperature(location), temperature)
+    discreteTempsCache.getOrElse(location, {
+      val temp = predictTemperature(temperatures, GridLocation.location(location), 3)
+      discreteTempsCache.put(location, temp)
+      temp
+    })
   }
 }

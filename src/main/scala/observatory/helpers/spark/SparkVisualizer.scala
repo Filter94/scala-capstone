@@ -79,7 +79,7 @@ object SparkVisualizer {
   def predictTemperatures(temperatures: Dataset[TempByLocation],
                           locations: Dataset[Location]): Dataset[(Location, Temperature)] = {
     val P = 3
-    temperatures // TODO: optimize by broadcasting the temps
+    temperatures // TODO: optimize
       .crossJoin(locations)
       .map { row =>
         (Location(row.getAs("lat"),
@@ -132,11 +132,15 @@ object SparkVisualizer {
   }
 
   def predictTemperature(temperatures: Iterable[(Location, Temperature)], location: Location): Temperature =
-    predictTemperatures(Utilities.toCaseClassDs(temperatures), spark.createDataset(List(location))).first()._2
+    predictTemperatures(toDs(temperatures), spark.createDataset(List(location))).first()._2
 
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
-    visualize(360, 180, COLOR_MAX)(Utilities.toCaseClassDs(temperatures), colors)
+    visualize(360, 180, COLOR_MAX)(toDs(temperatures), colors)
   }
+
+  def toDs(data: Iterable[(Location, Temperature)]): Dataset[TempByLocation] = spark.createDataset(data.map {
+    case (location, temp) => TempByLocation(location, temp)
+  }.toSeq)
 }
 
 trait SparkVisualizer extends Visualizer {
@@ -152,6 +156,6 @@ trait SparkVisualizer extends Visualizer {
 
   def visualizeTile(width: Int, height: Int, transparency: Int, tile: Tile)
                    (temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
-    SparkVisualizer.visualizeTile(width, height, transparency, tile)(Utilities.toCaseClassDs(temperatures), colors)
+    SparkVisualizer.visualizeTile(width, height, transparency, tile)(SparkVisualizer.toDs(temperatures), colors)
   }
 }

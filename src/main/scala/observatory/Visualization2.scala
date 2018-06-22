@@ -4,13 +4,13 @@ import com.sksamuel.scrimage.{Image, Pixel}
 import observatory.helpers.VisualizationMath
 import observatory.helpers.par.ParVisualizer
 
+import math._
 import scala.collection.parallel.ParIterable
-import scala.math.{log, pow}
 
 /**
   * 5th milestone: value-added information visualization
   */
-object Visualization2 extends ParVisualizer {
+object Visualization2 {
 
   /**
     * @param point (x, y) coordinates of a point in the grid cell
@@ -44,13 +44,17 @@ object Visualization2 extends ParVisualizer {
                      colors: Iterable[(Temperature, Color)],
                      tile: Tile
                    ): Image = {
-    val upscaleFactor = 2
+    val upscaleFactor = 1
     val width = 256 / upscaleFactor
     val height = 256 / upscaleFactor
     val transparency = 127
+    val targetZoom = (log(width) / log(2)).toInt
+    val xStart = targetZoom * tile.x
+    val yStart = targetZoom * tile.y
 
-    implicit def computePixels(temps: Iterable[(Location, Temperature)], locations: ParIterable[Location],
-                               colors: Iterable[(Temperature, Color)], transparency: Int): Array[Pixel] = {
+    implicit def computePixels(temperatures: Iterable[(Location, Temperature)],
+                               locations: ParIterable[Location], colors: Iterable[(Temperature, Color)],
+                      transparency: Int): Array[Pixel] = {
       import VisualizationMath.Implicits._
       val pixels = new Array[Pixel](locations.size)
       for {
@@ -70,14 +74,10 @@ object Visualization2 extends ParVisualizer {
     implicit def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
       val latIdx = i / WIDTH
       val lonIdx = i % WIDTH
-      val precision = (log(WIDTH) / log(2)).toInt
-      val targetZoom = precision
-      val xStart = (pow(2, precision) * tile.x).toInt
-      val yStart = (pow(2, precision) * tile.y).toInt
       val zoomedTile = Tile(xStart + lonIdx, yStart + latIdx, targetZoom + tile.zoom)
       zoomedTile.location
     }
 
-    visualize(width, height, transparency)(Iterable(), colors).scale(upscaleFactor)
+   ParVisualizer.visualize(width, height, transparency)(Iterable(), colors).scale(upscaleFactor)
   }
 }
