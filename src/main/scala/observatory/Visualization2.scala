@@ -1,10 +1,8 @@
 package observatory
 
 import com.sksamuel.scrimage.{Image, Pixel}
-import observatory.helpers.VisualizationMath
-import observatory.helpers.par.ParVisualizer
+import observatory.helpers.par.ParInteractor
 
-import math._
 import scala.collection.parallel.ParIterable
 
 /**
@@ -47,11 +45,6 @@ object Visualization2 {
     val upscaleFactor = 1
     val width = 256 / upscaleFactor
     val height = 256 / upscaleFactor
-    val transparency = 127
-    val targetZoom = (log(width) / log(2)).toInt
-    val zoomedTiles = pow(2, targetZoom).toInt
-    val xStart = zoomedTiles * tile.x
-    val yStart = zoomedTiles * tile.y
 
     implicit def computePixels(temperatures: Iterable[(Location, Temperature)],
                       locations: ParIterable[Location], colors: Iterable[(Temperature, Color)],
@@ -66,20 +59,11 @@ object Visualization2 {
           grid(square.topLeft), grid(square.bottomLeft),
           grid(square.topRight), grid(square.bottomRight))
         val interpolatedTemp = bilinearInterpolation(Location.cellPoint(location), d00, d01, d10, d11)
-        val color = VisualizationMath.interpolateColor(sortedColors, interpolatedTemp)
+        val color = Visualization.interpolateColor(sortedColors, interpolatedTemp)
         pixels(i) = Pixel(color.red, color.green, color.blue, transparency)
       }
       pixels
     }
-
-    implicit def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
-      val latIdx = i / WIDTH
-      val lonIdx = i % WIDTH
-      val zoomedTile = Tile(xStart + lonIdx, yStart + latIdx, targetZoom + tile.zoom)
-      zoomedTile.location
-    }
-
-   ParVisualizer.visualize(width, height, transparency)(Iterable(), colors)(locationsGenerator, computePixels)
-     .scale(upscaleFactor)
+    ParInteractor.visualizeTile(width, height)(Iterable(), colors, tile).scale(upscaleFactor)
   }
 }

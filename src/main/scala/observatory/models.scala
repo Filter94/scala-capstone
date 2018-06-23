@@ -27,17 +27,19 @@ object Location {
   def gridLocation(location: Location) = GridLocation(math.round(location.lat).toInt, math.round(location.lon).toInt)
   // top left, top right, bottom left, bottom right
   def surroundingGridLocations(location: Location): GridLocationsSquare = {
-    val lat = location.lat.toInt
-    val lon = location.lon.toInt
+    val lat = location.lat.ceil.toInt
+    val lon = location.lon.floor.toInt
     GridLocationsSquare(
-      GridLocation(lat, lon + 1),
       GridLocation(lat, lon),
-      GridLocation(lat + 1, lon + 1),
-      GridLocation(lat + 1, lon))
+      GridLocation(lat, lon + 1),
+      GridLocation(lat - 1, lon),
+      GridLocation(lat - 1, lon + 1))
   }
   def cellPoint(location: Location): CellPoint = {
-    val lonFraction = location.lon - location.lon.toInt
-    val latFraction = math.rint(location.lat) - location.lat
+    val lat = location.lat.ceil.toInt
+    val lon = location.lon.floor.toInt
+    val lonFraction = location.lon - lon
+    val latFraction = lat - location.lat
     CellPoint(lonFraction, latFraction)
   }
 }

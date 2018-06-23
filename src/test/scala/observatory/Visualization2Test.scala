@@ -1,5 +1,6 @@
 package observatory
 
+import com.sksamuel.scrimage.{Image, Pixel, RGBColor}
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 import org.scalactic.Tolerance._
@@ -50,14 +51,15 @@ trait Visualization2Test extends FunSuite with Checkers {
       (-50, Color(33, 255, 107)),
       (-60, Color(0, 0, 0)))
     val grid: GridLocation => Temperature = Manipulation.makeGrid(temperatures)
-    val tile = Tile(1, 0, 1)
+    val tile = Tile(0, 0, 0)
     val image = Visualization2.visualizeGrid(grid, colors, tile)
     image.output("Pepsi grid.png")
   }
 
   test("Image test grid with big data") {
-    val temperaturesByDate = Extraction.locateTemperatures(1975, "/stations.csv", "/1975.csv")
-    val temperatures = Extraction.locationYearlyAverageRecords(temperaturesByDate)
+    val temperaturesByDate = Extraction.locateTemperaturesSpark(1975, "/stations.csv", "/1975.csv")
+    val temperatures = Extraction.locationYearlyAverageRecordsSpark(temperaturesByDate)
+      .sample(withReplacement = false, 0.5).collect()
     println("Computing average finished")
     val colors: Seq[(Temperature, Color)] = Seq(
       (60, Color(255, 255, 255)),
@@ -69,21 +71,10 @@ trait Visualization2Test extends FunSuite with Checkers {
       (-50, Color(33, 255, 107)),
       (-60, Color(0, 0, 0)))
     val grid: GridLocation => Temperature = Manipulation.makeGrid(temperatures)
-    val tile = Tile(0, 0, 0)
+    val tile = Tile(0, 0, 1)
     println("Visualisation started")
     val image = Visualization2.visualizeGrid(grid, colors, tile)
         image.output("Big data grid implementation.png")
-  }
-
-  test("visualizeGrid should be calculated correctly") {
-    val colors: Iterable[(Temperature, Color)] = Seq(
-      (10, Color(0, 0, 100)),
-      (11, Color(0, 0, 156)),
-      (0, Color(0, 0, 0)),
-      (-2, Color(0, 255, 101)),
-      (17, Color(13, 13, 13)))
-    val img = Visualization2.visualizeGrid( _ => -1, colors, Tile(1,1,2))
-    assert(img.pixel(0,0).toColor.toInt === 2133996132)
   }
 
   test("Implementations effectiveness comparison") {
@@ -103,6 +94,8 @@ trait Visualization2Test extends FunSuite with Checkers {
     val tile = Tile(0, 0, 0)
 
     val tiletime = standardConfig measure {
+      Interaction.tile(temps, colors, tile)
+      Interaction.tile(temps, colors, tile)
       Interaction.tile(temps, colors, tile)
     }
     println(s"Usual time: $tiletime ms")
