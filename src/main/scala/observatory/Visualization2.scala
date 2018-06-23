@@ -49,8 +49,9 @@ object Visualization2 {
     val height = 256 / upscaleFactor
     val transparency = 127
     val targetZoom = (log(width) / log(2)).toInt
-    val xStart = targetZoom * tile.x
-    val yStart = targetZoom * tile.y
+    val zoomedTiles = pow(2, targetZoom).toInt
+    val xStart = zoomedTiles * tile.x
+    val yStart = zoomedTiles * tile.y
 
     implicit def computePixels(temperatures: Iterable[(Location, Temperature)],
                       locations: ParIterable[Location], colors: Iterable[(Temperature, Color)],
