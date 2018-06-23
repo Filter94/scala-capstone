@@ -53,7 +53,7 @@ object Visualization2 {
     val yStart = targetZoom * tile.y
 
     def computePixels(temperatures: Iterable[(Location, Temperature)],
-                      locations: Iterable[Location], colors: Iterable[(Temperature, Color)],
+                      locations: ParIterable[Location], colors: Iterable[(Temperature, Color)],
                       transparency: Int): Array[Pixel] = {
       val pixels = new Array[Pixel](locations.size)
       val sortedColors = colors.toSeq.sortBy{case (temp, _) => temp}

@@ -5,35 +5,37 @@ import observatory._
 import observatory.helpers.VisualizationMath
 import observatory.helpers.VisualizationMath._
 
-object ParVisualizer {
-    def computePixels(temps: Iterable[(Location, Temperature)], locations: Iterable[Location],
-                      colors: Iterable[(Temperature, Color)], transparency: Int): Array[Pixel] = {
-      val colorsSorted = sortPoints(colors.toSeq)
-      val tempsInterpolated: Iterable[Temperature] = predictTemperatures(temps, locations)
-      val pixels = new Array[Pixel](locations.size)
-      for {
-        (temp, i) <- tempsInterpolated.zipWithIndex.par
-      } {
-        val color = interpolateColor(colorsSorted, temp)
-        pixels(i) = Pixel(color.red, color.green, color.blue, transparency)
-      }
-      pixels
-    }
+import scala.collection.parallel.immutable.ParIterable
 
-    def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
-      val latStart: Double = 90
-      val latLength: Double = 180
-      val lonStart: Double = -180
-      val lonLength: Double = 360
-      val latIdx = i / WIDTH
-      val lonIdx = i % WIDTH
-      val latStep = latLength / HEIGHT
-      val lonStep = lonLength / WIDTH
-      Location(latStart - latIdx * latStep, lonStart + lonIdx * lonStep)
+object ParVisualizer {
+  def computePixels(temps: Iterable[(Location, Temperature)], locations: ParIterable[Location],
+                    colors: Iterable[(Temperature, Color)], transparency: Int): Array[Pixel] = {
+    val colorsSorted = sortPoints(colors.toSeq)
+    val tempsInterpolated: ParIterable[Temperature] = predictTemperatures(temps, locations)
+    val pixels = new Array[Pixel](locations.size)
+    for {
+      (temp, i) <- tempsInterpolated.zipWithIndex
+    } {
+      val color = interpolateColor(colorsSorted, temp)
+      pixels(i) = Pixel(color.red, color.green, color.blue, transparency)
     }
+    pixels
+  }
+
+  def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
+    val latStart: Double = 90
+    val latLength: Double = 180
+    val lonStart: Double = -180
+    val lonLength: Double = 360
+    val latIdx = i / WIDTH
+    val lonIdx = i % WIDTH
+    val latStep = latLength / HEIGHT
+    val lonStep = lonLength / WIDTH
+    Location(latStart - latIdx * latStep, lonStart + lonIdx * lonStep)
+  }
 
   def sortPoints(colors: Seq[(Temperature, Color)]): Seq[(Temperature, Color)] = {
-    colors.sortBy{case (temp, _) => temp}
+    colors.sortBy { case (temp, _) => temp }
   }
 
   val epsilon = 1E-5
@@ -44,7 +46,7 @@ object ParVisualizer {
   }
 
   def predictTemperatures(temperatures: Iterable[(Location, Temperature)],
-                          locations: Iterable[Location]): Iterable[Temperature] = {
+                          locations: ParIterable[Location]): ParIterable[Temperature] = {
     for {
       location <- locations
     } yield predictTemperature(temperatures, location)
@@ -53,10 +55,10 @@ object ParVisualizer {
   def visualize(WIDTH: Int, HEIGHT: Int, transparency: Int = COLOR_MAX)
                (temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)])
                (locationsGenerator: (Int, Int) => Int => Location,
-                computePixels: (Iterable[(Location, Temperature)], Iterable[Location],
+                computePixels: (Iterable[(Location, Temperature)], ParIterable[Location],
                   Iterable[(Temperature, Color)], Int) => Array[Pixel]): Image = {
     val locations = Range(0, WIDTH * HEIGHT).par
-      .map(i => locationsGenerator(WIDTH, HEIGHT)(i)).seq
+      .map(i => locationsGenerator(WIDTH, HEIGHT)(i))
     val pixels = computePixels(temperatures, locations, colors, transparency)
     Image(WIDTH, HEIGHT, pixels)
   }

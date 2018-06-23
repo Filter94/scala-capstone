@@ -16,9 +16,10 @@ object ParInteractor extends Interactor {
 
   def visualizeTile(sizeX: Int, sizeY: Int)(temperatures: Iterable[(Location, Temperature)],
                                             colors: Iterable[(Temperature, Color)], tile: Tile): Image = {
-    val targetZoom = (log(IMAGE_SIZE_X) / log(2)).toInt
-    val xStart = targetZoom * tile.x
-    val yStart = targetZoom * tile.y
+    val targetZoom = (log(sizeX) / log(2)).toInt
+    val zoomedTiles = pow(2, targetZoom).toInt
+    val xStart = zoomedTiles * tile.x
+    val yStart = zoomedTiles * tile.y
     def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
       val latIdx = i / WIDTH
       val lonIdx = i % WIDTH
