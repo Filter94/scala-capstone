@@ -1,6 +1,5 @@
 package observatory
 
-import observatory.helpers.Grid
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 import org.scalactic.Tolerance._
@@ -44,7 +43,7 @@ trait Visualization2Test extends FunSuite with Checkers {
     val colors: Seq[(Temperature, Color)] = Seq(
       (-1.0, Color(255, 0, 0)),
       (-100.0, Color(0, 0, 255)))
-    val grid: GridLocation => Temperature = Grid(temperatures).getTemperature
+    val grid: GridLocation => Temperature = Manipulation.makeGrid(temperatures)
     val tile = Tile(0, 0, 0)
     val image = Visualization2.visualizeGrid(grid, colors, tile)
     image.output("Pepsi grid.png")
@@ -63,7 +62,7 @@ trait Visualization2Test extends FunSuite with Checkers {
       (-27, Color(255, 0, 255)),
       (-50, Color(33, 255, 107)),
       (-60, Color(0, 0, 0)))
-    val grid: GridLocation => Temperature = Grid(temperatures).getTemperature
+    val grid: GridLocation => Temperature = Manipulation.makeGrid(temperatures)
     val tile = Tile(0, 0, 0)
     println("Visualisation started")
     val image = Visualization2.visualizeGrid(grid, colors, tile)
@@ -103,7 +102,9 @@ trait Visualization2Test extends FunSuite with Checkers {
     println(s"Usual time: $tiletime ms")
 
     val gridtime = standardConfig measure {
-      val grid: GridLocation => Temperature = Grid(temps).getTemperature
+      val grid: GridLocation => Temperature = Manipulation.makeGrid(temps)
+      Visualization2.visualizeGrid(grid, colors, tile)
+      Visualization2.visualizeGrid(grid, colors, tile)
       Visualization2.visualizeGrid(grid, colors, tile)
     }
     println(s"Grid time: $gridtime ms")

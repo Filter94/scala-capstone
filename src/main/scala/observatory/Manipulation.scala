@@ -1,53 +1,50 @@
 package observatory
 
-import observatory.helpers. VisualizationMath
 
-import scala.collection.concurrent.TrieMap
+import observatory.helpers.Grid
 
 /**
   * 4th milestone: value-added information
   */
 object Manipulation {
+  def grid(temperatures: Iterable[(Location, Temperature)]): Grid = {
+    Grid(gridLocation =>
+      Visualization.predictTemperature(temperatures, Location(gridLocation.lat, gridLocation.lon)))
+  }
+
   /**
     * @param temperatures Known temperatures
     * @return A function that, given a latitude in [-89, 90] and a longitude in [-180, 179],
     *         returns the predicted temperature at this location
     */
   def makeGrid(temperatures: Iterable[(Location, Temperature)]): GridLocation => Temperature = {
-    lazy val discreteTempsCache: TrieMap[GridLocation, Temperature] = TrieMap()
-    gridLocation: GridLocation => {
-      discreteTempsCache.getOrElse(gridLocation, {
-        lazy val temp = Visualization.predictTemperature(temperatures, GridLocation.location(gridLocation))
-        discreteTempsCache.put(gridLocation, temp)
-        temp
-      })
-    }
+    grid(temperatures).apply
   }
-
   /**
     * @param temperaturess Sequence of known temperatures over the years (each element of the collection
     *                      is a collection of pairs of location and temperature)
     * @return A function that, given a latitude and a longitude, returns the average temperature at this location
     */
   def average(temperaturess: Iterable[Iterable[(Location, Temperature)]]): GridLocation => Temperature = {
-//    val grids: Iterable[GridLocation => Temperature] = temperaturess.map(temperatures => makeGrid(temperatures))
-//    gridLocation => {
-//       grids.map(grid => grid(gridLocation)).par.sum / grids.size
-//    }
-    ???
+    val grids: Iterable[Grid] = temperaturess.map(temperatures => grid(temperatures))
+    val sumGrid = grids.reduce((a, b) => a.combine({(acc, gridLocation) => acc + b(gridLocation)}))
+    val averageGrid = sumGrid.map(temperature => temperature / grids.size )
+    averageGrid.apply
   }
 
   /**
     * @param temperatures Known temperatures
-    * @param normals A grid containing the “normal” temperatures
+    * @param normals      A grid containing the “normal” temperatures
     * @return A grid containing the deviations compared to the normal temperatures
     */
   def deviation(temperatures: Iterable[(Location, Temperature)],
                 normals: GridLocation => Temperature): GridLocation => Temperature = {
-    val grid = makeGrid(temperatures)
-    location => {
-      grid(location) - normals(location)
-    }
+    val newTemps = grid(temperatures)
+    val deviationsGrid = newTemps.combine({
+      case (newTemp, gridLocation) =>
+        newTemp - normals(gridLocation)
+    })
+    deviationsGrid.apply
   }
 }
 
