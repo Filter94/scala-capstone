@@ -15,15 +15,17 @@ object VisualizationMath {
   type Distance = Double
 
   def sphereDistance(a: Location, b: Location): Distance = {
-    val dLat = (b.lat - a.lat).toRadians
-    val dLon = (b.lon - a.lon).toRadians
-
-    val exp = pow(sin(dLat / 2), 2) + pow(sin(dLon / 2), 2) * cos(a.lat.toRadians) * cos(b.lat.toRadians)
-    val distance = 2 * asin(sqrt(exp))
-    R * distance
+    if (a == b) {
+      0
+    } else {
+      val lat1 = toRadians(a.lat)
+      val lat2 = toRadians(b.lat)
+      val deltaLongitudes = abs(toRadians(a.lon - b.lon))
+      R * acos(sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(deltaLongitudes))
+    }
   }
 
-  def w(x: Location, d: Distance, p: Double): Temperature = 1 / math.pow(d, p)
+  def w(d: Distance, p: Double): Temperature = 1 / math.pow(d, p)
 
   def findInterval(points: Seq[(Temperature, Color)], temp: Temperature): (Option[(Temperature, Color)],
     Option[(Temperature, Color)]) = {

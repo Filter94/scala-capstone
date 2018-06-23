@@ -52,7 +52,7 @@ object Visualization2 {
     val xStart = targetZoom * tile.x
     val yStart = targetZoom * tile.y
 
-    def computePixels(temperatures: Iterable[(Location, Temperature)],
+    implicit def computePixels(temperatures: Iterable[(Location, Temperature)],
                       locations: ParIterable[Location], colors: Iterable[(Temperature, Color)],
                       transparency: Int): Array[Pixel] = {
       val pixels = new Array[Pixel](locations.size)
@@ -71,7 +71,7 @@ object Visualization2 {
       pixels
     }
 
-    def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
+    implicit def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
       val latIdx = i / WIDTH
       val lonIdx = i % WIDTH
       val zoomedTile = Tile(xStart + lonIdx, yStart + latIdx, targetZoom + tile.zoom)

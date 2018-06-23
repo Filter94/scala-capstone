@@ -1,7 +1,6 @@
 package observatory
 
-import observatory.helpers.Grid
-import observatory.helpers.par.ParVisualizer.predictTemperature
+import observatory.helpers. VisualizationMath
 
 import scala.collection.concurrent.TrieMap
 
@@ -15,15 +14,14 @@ object Manipulation {
     *         returns the predicted temperature at this location
     */
   def makeGrid(temperatures: Iterable[(Location, Temperature)]): GridLocation => Temperature = {
-//    val discreteTempsCache: TrieMap[GridLocation, Temperature] = TrieMap()
-//    gridLocation: GridLocation => {
-//      discreteTempsCache.getOrElse(gridLocation, {
-//        val temp = predictTemperature(temperatures, GridLocation.location(gridLocation))
-//        discreteTempsCache.put(gridLocation, temp)
-//        temp
-//      })
-//    }
-    ???
+    lazy val discreteTempsCache: TrieMap[GridLocation, Temperature] = TrieMap()
+    gridLocation: GridLocation => {
+      discreteTempsCache.getOrElse(gridLocation, {
+        lazy val temp = Visualization.predictTemperature(temperatures, GridLocation.location(gridLocation))
+        discreteTempsCache.put(gridLocation, temp)
+        temp
+      })
+    }
   }
 
   /**

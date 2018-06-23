@@ -80,7 +80,7 @@ object SparkVisualizer {
           (b1, b2) match {
             case ((nomAcc, denomAcc), (xi, location, ui)) =>
               val d = max(sphereDistance(location, xi), epsilon)
-              val wi = w(location, d, P)
+              val wi = w(d, P)
               (nomAcc + wi * ui, denomAcc + wi)
           }
         }, {

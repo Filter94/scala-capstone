@@ -20,12 +20,13 @@ object ParInteractor extends Interactor {
     val zoomedTiles = pow(2, targetZoom).toInt
     val xStart = zoomedTiles * tile.x
     val yStart = zoomedTiles * tile.y
-    def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
+    import ParVisualizer.Implicits.computePixels
+    implicit def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
       val latIdx = i / WIDTH
       val lonIdx = i % WIDTH
       val zoomedTile = Tile(xStart + lonIdx, yStart + latIdx, targetZoom + tile.zoom)
       zoomedTile.location
     }
-    ParVisualizer.visualize(sizeX, sizeY, 127)(temperatures, colors)(locationsGenerator, ParVisualizer.computePixels)
+    ParVisualizer.visualize(sizeX, sizeY, 127)(temperatures, colors)
   }
 }

@@ -1,7 +1,6 @@
 package observatory.helpers
 
-import observatory.{GridLocation, Location, Temperature}
-import observatory.helpers.par.ParVisualizer.predictTemperature
+import observatory._
 
 import scala.collection.concurrent.TrieMap
 
@@ -14,7 +13,7 @@ class Grid(temperatures: Iterable[(Location, Temperature)]) {
 
   def getTemperature(location: GridLocation): Temperature = {
     discreteTempsCache.getOrElse(location, {
-      val temp = predictTemperature(temperatures, GridLocation.location(location), 3)
+      val temp = Visualization.predictTemperature(temperatures, GridLocation.location(location))
       discreteTempsCache.put(location, temp)
       temp
     })
