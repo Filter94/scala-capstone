@@ -29,7 +29,7 @@ libraryDependencies ++= Seq(
   "org.scalacheck" %% "scalacheck" % "1.12.1" % Test,
   "junit" % "junit" % "4.10" % Test,
   "com.storm-enroute" %% "scalameter" % "0.6" % Test,
-  "com.storm-enroute" %% "scalameter-core" % "0.6"
+  "com.storm-enroute" %% "scalameter-core" % "0.6" % Test
 )
 
 courseId := "PCO2sYdDEeW0iQ6RUMSWEQ"

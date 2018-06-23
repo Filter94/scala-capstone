@@ -87,7 +87,7 @@ trait VisualizationTest extends FunSuite with Checkers {
     assert(Visualization.interpolateColor(colors, 50.0) === Color(0, 0, 0))
     assert(Visualization.interpolateColor(colors, 0.0) === Color(255, 0, 128))
     assert(Visualization.interpolateColor(colors, 200.0) === Color(255, 255, 255))
-    assert(Visualization.interpolateColor(colors, 75.0) === Color(128, 128, 128))
+    assert(Visualization.interpolateColor(colors, 75.0) === Color(127, 127, 127))
     assert(Visualization.interpolateColor(colors, 25.0) === Color(128, 0, 64))
   }
 

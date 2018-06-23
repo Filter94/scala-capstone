@@ -23,7 +23,7 @@ object Visualization {
     * @return The color that corresponds to `value`, according to the color scale defined by `points`
     */
   def interpolateColor(points: Iterable[(Temperature, Color)], value: Temperature): Color = {
-    ParVisualizer.interpolateColor(points, value)
+    ParVisualizer.interpolateColor(points.toSeq, value)
   }
 
   /**

@@ -52,11 +52,11 @@ object Visualization2 {
     val xStart = targetZoom * tile.x
     val yStart = targetZoom * tile.y
 
-    implicit def computePixels(temperatures: Iterable[(Location, Temperature)],
-                               locations: ParIterable[Location], colors: Iterable[(Temperature, Color)],
+    def computePixels(temperatures: Iterable[(Location, Temperature)],
+                      locations: Iterable[Location], colors: Iterable[(Temperature, Color)],
                       transparency: Int): Array[Pixel] = {
-      import VisualizationMath.Implicits._
       val pixels = new Array[Pixel](locations.size)
+      val sortedColors = colors.toSeq.sortBy{case (temp, _) => temp}
       for {
         (location, i: Int) <- locations.zipWithIndex
       } {
@@ -65,19 +65,20 @@ object Visualization2 {
           grid(square.topLeft), grid(square.bottomLeft),
           grid(square.topRight), grid(square.bottomRight))
         val interpolatedTemp = bilinearInterpolation(Location.cellPoint(location), d00, d01, d10, d11)
-        val color = VisualizationMath.interpolateColor(colors, interpolatedTemp)
+        val color = VisualizationMath.interpolateColor(sortedColors, interpolatedTemp)
         pixels(i) = Pixel(color.red, color.green, color.blue, transparency)
       }
       pixels
     }
 
-    implicit def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
+    def locationsGenerator(WIDTH: Int, HEIGHT: Int)(i: Int): Location = {
       val latIdx = i / WIDTH
       val lonIdx = i % WIDTH
       val zoomedTile = Tile(xStart + lonIdx, yStart + latIdx, targetZoom + tile.zoom)
       zoomedTile.location
     }
 
-   ParVisualizer.visualize(width, height, transparency)(Iterable(), colors).scale(upscaleFactor)
+   ParVisualizer.visualize(width, height, transparency)(Iterable(), colors)(locationsGenerator, computePixels)
+     .scale(upscaleFactor)
   }
 }

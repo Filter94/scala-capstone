@@ -5,16 +5,14 @@ import observatory._
 import observatory.helpers.SparkContextKeeper.spark
 import observatory.helpers.SparkContextKeeper.spark.implicits._
 import observatory.helpers.VisualizationMath._
-import observatory.helpers.VisualizationMath.Implicits.interpolateComponent
 import observatory.helpers.{VisualizationMath, Visualizer}
 import org.apache.spark.sql.Dataset
 
-import scala.collection.GenIterable
 import scala.math._
 
 object SparkVisualizer {
   def computePixels(temps: Dataset[TempByLocation], locations: Dataset[Location],
-                    colors: Iterable[(Temperature, Color)], transparency: Int): Array[Pixel] = {
+                    colors: Seq[(Temperature, Color)], transparency: Int): Array[Pixel] = {
     val tempsInterpolated = predictTemperatures(temps, locations)
       .orderBy($"location.lat".desc, $"location.lon")
       .select($"temp".as[Temperature]).collect()
@@ -36,17 +34,6 @@ object SparkVisualizer {
     val latStep = latLength / HEIGHT
     val lonStep = lonLength / WIDTH
     Location(latStart - latIdx * latStep, lonStart + lonIdx * lonStep)
-  }
-
-  def tileLocationsGenerator(WIDTH: Int, HEIGHT: Int, tile: Tile)(i: Long): Location = {
-    val latIdx = (i / WIDTH).toInt
-    val lonIdx = (i % WIDTH).toInt
-    val precision = (log(WIDTH) / log(2)).toInt
-    val targetZoom = precision
-    val xStart = (pow(2, precision) * tile.x).toInt
-    val yStart = (pow(2, precision) * tile.y).toInt
-    val zoomedTile = Tile(xStart + lonIdx, yStart + latIdx, targetZoom + tile.zoom)
-    zoomedTile.location
   }
 
   val epsilon = 1E-5
@@ -119,15 +106,24 @@ object SparkVisualizer {
                (temperatures: Dataset[TempByLocation], colors: Iterable[(Temperature, Color)]): Image = {
     val locations: Dataset[Location] = spark.range(width * height)
       .map(i => locationsGenerator(width, height)(i))
-    val pixels = computePixels(temperatures, locations, colors, transparency)
+    val pixels = computePixels(temperatures, locations, colors.toSeq, transparency)
     Image(width, height, pixels)
   }
 
   def visualizeTile(width: Int, height: Int, transparency: Int = COLOR_MAX, tile: Tile)
                    (temperatures: Dataset[TempByLocation], colors: Iterable[(Temperature, Color)]): Image = {
+    val targetZoom = (log(width) / log(2)).toInt
+    val xStart = targetZoom * tile.x
+    val yStart = targetZoom * tile.y
+    def tileLocationsGenerator(WIDTH: Int, HEIGHT: Int, tile: Tile)(i: Long): Location = {
+      val latIdx = (i / WIDTH).toInt
+      val lonIdx = (i % WIDTH).toInt
+      val zoomedTile = Tile(xStart + lonIdx, yStart + latIdx, targetZoom + tile.zoom)
+      zoomedTile.location
+    }
     val locations: Dataset[Location] = spark.range(width * height)
       .map(i => tileLocationsGenerator(width, height, tile)(i))
-    val pixels = computePixels(temperatures, locations, colors, transparency)
+    val pixels = computePixels(temperatures, locations, colors.toSeq, transparency)
     Image(width, height, pixels)
   }
 
@@ -147,8 +143,8 @@ trait SparkVisualizer extends Visualizer {
   def predictTemperature(temperatures: Iterable[(Location, Temperature)], location: Location): Temperature =
     SparkVisualizer.predictTemperature(temperatures, location)
 
-  override def interpolateColor(points: GenIterable[(Temperature, Color)], value: Temperature): Color = {
-    VisualizationMath.interpolateColor(points, value)
+  def interpolateColor(points: Iterable[(Temperature, Color)], value: Temperature): Color = {
+    VisualizationMath.interpolateColor(points.toSeq, value)
   }
 
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image =

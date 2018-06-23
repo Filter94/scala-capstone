@@ -3,8 +3,11 @@ package observatory
 import java.nio.file.Paths
 import java.time.LocalDate
 
+import observatory.Extraction.locationYearlyAverageRecordsSpark
 import org.apache.spark.rdd.RDD
 import observatory.helpers.SparkContextKeeper.spark
+import org.apache.spark.sql.Dataset
+import org.apache.spark.sql.functions.avg
 
 /**
   * 1st milestone: data extraction
@@ -79,5 +82,22 @@ object Extraction {
           location.foldLeft(0.0)(
             (t, r) => t + r.temperature) / location.size
       }.seq
+  }
+
+  /**
+    * @param records A sequence containing triplets (date, location, temperature)
+    * @return A sequence containing, for each location, the average temperature over the year.
+    */
+  def locationYearlyAverageRecordsSpark(records: Iterable[(LocalDate, Location, Temperature)]): Iterable[(Location, Temperature)] = {
+    locationYearlyAverageRecordsSpark(spark.sparkContext.parallelize(records.toSeq)).collect()
+  }
+
+  def locationYearlyAverageRecordsSpark(records: RDD[(LocalDate, Location, Temperature)]): Dataset[(Location, Temperature)] = {
+    val locationTempRdd = records.map { case (_, location, temp) =>
+      TempByLocation(location, temp) }
+    locationTempRdd.toDS()
+      .groupBy($"location")
+      .agg(avg($"temperature").as("average temp"))
+      .select($"location".as[Location], $"average temp".as[Temperature])
   }
 }
