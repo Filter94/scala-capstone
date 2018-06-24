@@ -189,20 +189,4 @@ trait VisualizationTest extends FunSuite with Checkers {
     val image = Visualization.visualize(temps, colors)
     image.output("pepsi.png")
   }
-
-  test("Image test ends in reasonable time") {
-    val colors: Seq[(Temperature, Color)] = Seq(
-      (60, Color(255, 255, 255)),
-      (32, Color(255, 0, 0)),
-      (12, Color(255, 255, 0)),
-      (0, Color(0, 255, 255)),
-      (-15, Color(0, 0, 255)),
-      (-27, Color(255, 0, 255)),
-      (-50, Color(33, 255, 107)),
-      (-60, Color(0, 0, 0)))
-    val temperaturesByDate = Extraction.locateTemperatures(1975, "/stations.csv", "/1975.csv")
-    val temperatures = Extraction.locationYearlyAverageRecords(temperaturesByDate)
-    val image = Visualization.visualize(temperatures, colors)
-    image.output("big data test.png")
-  }
 }

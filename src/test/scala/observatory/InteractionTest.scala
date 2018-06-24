@@ -11,12 +11,6 @@ trait InteractionTest extends FunSuite with Checkers {
     assert(expectedLocation === Interaction.tileLocation(tile))
   }
 
-  test("We can get 90 degrees in principle") {
-    val tile = Tile(0, Int.MinValue, 1)
-    val expectedLocation = Location(90, -180)
-    assert(expectedLocation === Interaction.tileLocation(tile))
-  }
-
   test("Tile image test") {
     val temps: Seq[(Location, Temperature)] = Seq(
       (Location(45.0, -90.0), 60.0),
@@ -33,16 +27,5 @@ trait InteractionTest extends FunSuite with Checkers {
     val tile = Tile(0, 0, 0)
     val image = Interaction.tile(temps, colors, tile)
     image.output(s"tile.png")
-  }
-
-  test("Tile image test big data") {
-    val temperaturesByDate = Extraction.locateTemperatures(1975, "/stations.csv", "/1975.csv")
-    val temperatures = Extraction.locationYearlyAverageRecordsSpark(temperaturesByDate)
-    val colors: Seq[(Temperature, Color)] = Seq(
-      (-1.0, Color(255, 0, 0)),
-      (-100.0, Color(0, 0, 255)))
-    val tile = Tile(0, 0, 0)
-    val image = Interaction.tile(temperatures, colors, tile)
-    image.output(s"tile big data.png")
   }
 }

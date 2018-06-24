@@ -64,41 +64,4 @@ trait ManipulationTest extends FunSuite with Checkers {
     assert(deviationGrid(GridLocation(0, 179)) === (20.0 +- epsilon))
     assert(deviationGrid(GridLocation(90, 179)) === (10.0 +- epsilon))
   }
-
-  test("Grid implementations effectiveness") {
-    val standardConfig = config(
-      Key.exec.minWarmupRuns -> 20,
-      Key.exec.maxWarmupRuns -> 40,
-      Key.exec.benchRuns -> 25,
-      Key.verbose -> true
-    ) withWarmer new Warmer.Default
-
-    val temps: Iterable[Iterable[(Location, Temperature)]] = Seq(
-      Seq(
-        (Location(90, -180), 0),
-        (Location(30, 60), 20),
-        (Location(-89, -180), 0),
-        (Location(-89, 179), 20),
-        (Location(0, -180), 0),
-        (Location(0, 179), 20)),
-      Seq(
-        (Location(90, -180), 2),
-        (Location(30, 60), 22),
-        (Location(-89, -180), 2),
-        (Location(-89, 179), 40),
-        (Location(0, -180), 2),
-        (Location(0, 179), 20)))
-    val colors: Seq[(Temperature, Color)] = Seq(
-      (-1.0, Color(255, 0, 0)),
-      (-100.0, Color(0, 0, 255)))
-    val tile = Tile(0, 0, 0)
-
-    val time = standardConfig measure {
-      val grid: GridLocation => Temperature = Manipulation.average(temps)
-      Visualization2.visualizeGrid(grid, colors, tile)
-      Visualization2.visualizeGrid(grid, colors, tile)
-      Visualization2.visualizeGrid(grid, colors, tile)
-    }
-    println(s"Grid time: $time ms")
-  }
 }

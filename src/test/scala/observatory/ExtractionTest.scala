@@ -37,11 +37,4 @@ trait ExtractionTest extends FunSuite {
       (Location(37.358, -78.438), 1.0))
     assert(expected.toSet === res.toSet)
   }
-
-//  test("Average temperature ends in reasonable time on big data") {
-//    val res = Extraction.locateTemperatures(2018, "/stations.csv", "/1975.csv")
-//    assert(res.nonEmpty)
-//    val avg = Extraction.locationYearlyAverageRecords(res)
-//    assert(avg.nonEmpty)
-//  }
 }

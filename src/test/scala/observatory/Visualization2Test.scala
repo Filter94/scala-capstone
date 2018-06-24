@@ -1,10 +1,8 @@
 package observatory
 
-import com.sksamuel.scrimage.{Image, Pixel, RGBColor}
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 import org.scalactic.Tolerance._
-import org.scalameter._
 
 trait Visualization2Test extends FunSuite with Checkers {
 
@@ -54,59 +52,5 @@ trait Visualization2Test extends FunSuite with Checkers {
     val tile = Tile(0, 0, 0)
     val image = Visualization2.visualizeGrid(grid, colors, tile)
     image.output("Pepsi grid.png")
-  }
-
-  test("Image test grid with big data") {
-    val temperaturesByDate = Extraction.locateTemperaturesSpark(1975, "/stations.csv", "/1975.csv")
-    val temperatures = Extraction.locationYearlyAverageRecordsSpark(temperaturesByDate)
-      .sample(withReplacement = false, 0.5).collect()
-    println("Computing average finished")
-    val colors: Seq[(Temperature, Color)] = Seq(
-      (60, Color(255, 255, 255)),
-      (32, Color(255, 0, 0)),
-      (12, Color(255, 255, 0)),
-      (0, Color(0, 255, 255)),
-      (-15, Color(0, 0, 255)),
-      (-27, Color(255, 0, 255)),
-      (-50, Color(33, 255, 107)),
-      (-60, Color(0, 0, 0)))
-    val grid: GridLocation => Temperature = Manipulation.makeGrid(temperatures)
-    val tile = Tile(0, 0, 1)
-    println("Visualisation started")
-    val image = Visualization2.visualizeGrid(grid, colors, tile)
-        image.output("Big data grid implementation.png")
-  }
-
-  test("Implementations effectiveness comparison") {
-    val standardConfig = config(
-      Key.exec.minWarmupRuns -> 20,
-      Key.exec.maxWarmupRuns -> 40,
-      Key.exec.benchRuns -> 25,
-      Key.verbose -> true
-    ) withWarmer new Warmer.Default
-
-    val temps: Seq[(Location, Temperature)] = Seq(
-      (Location(45.0, -90.0), -1.0),
-      (Location(-45.0, 0.0), -100.0))
-    val colors: Seq[(Temperature, Color)] = Seq(
-      (-1.0, Color(255, 0, 0)),
-      (-100.0, Color(0, 0, 255)))
-    val tile = Tile(0, 0, 0)
-
-    val tiletime = standardConfig measure {
-      Interaction.tile(temps, colors, tile)
-      Interaction.tile(temps, colors, tile)
-      Interaction.tile(temps, colors, tile)
-    }
-    println(s"Usual time: $tiletime ms")
-
-    val gridtime = standardConfig measure {
-      val grid: GridLocation => Temperature = Manipulation.makeGrid(temps)
-      Visualization2.visualizeGrid(grid, colors, tile)
-      Visualization2.visualizeGrid(grid, colors, tile)
-      Visualization2.visualizeGrid(grid, colors, tile)
-    }
-    println(s"Grid time: $gridtime ms")
-    println(s"speedup: ${tiletime / gridtime}")
   }
 }
