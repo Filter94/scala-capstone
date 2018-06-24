@@ -4,13 +4,13 @@ import observatory.{Color, Location, Temperature}
 import scala.math._
 
 object VisualizationMath {
+  private val R = 6372.8
+  type Distance = Double
+
   def interpolateComponent(x1: Temperature, x2: Temperature, value: Temperature)(y1: Int, y2: Int): Int =
     math.round(y1 + ((y2 - y1) / (x2 - x1) * (value - x1))).toInt
 
-  def tempDistance(a: Temperature, b: Temperature): Distance = abs(a - b)
 
-  private val R = 6372.8
-  type Distance = Double
 
   def sphereDistance(a: Location, b: Location): Distance = {
     val dLat = (b.lat - a.lat).toRadians
