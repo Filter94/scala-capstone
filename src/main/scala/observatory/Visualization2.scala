@@ -54,11 +54,11 @@ object Visualization2 {
       for {
         (location, i: Int) <- locations.zipWithIndex
       } {
-        val square = Location.surroundingGridLocations(location)
+        val square = location.gridSquare
         val (d00, d01, d10, d11) = (
           grid(square.topLeft), grid(square.bottomLeft),
           grid(square.topRight), grid(square.bottomRight))
-        val interpolatedTemp = bilinearInterpolation(Location.cellPoint(location), d00, d01, d10, d11)
+        val interpolatedTemp = bilinearInterpolation(location.cellPoint, d00, d01, d10, d11)
         val color = Visualization.interpolateColor(sortedColors, interpolatedTemp)
         pixels(i) = Pixel(color.red, color.green, color.blue, transparency)
       }

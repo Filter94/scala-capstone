@@ -3,14 +3,13 @@ package observatory.helpers.par
 import com.sksamuel.scrimage.{Image, Pixel}
 import observatory._
 import observatory.helpers.VisualizationMath
-import observatory.helpers.VisualizationMath._
 
 import scala.collection.parallel.immutable.ParIterable
 
 object ParVisualizer {
   object Implicits {
     implicit def computePixels(temps: Iterable[(Location, Temperature)], locations: ParIterable[Location],
-                      colors: Iterable[(Temperature, Color)], transparency: Int): Array[Pixel] = {
+                               colors: Iterable[(Temperature, Color)], transparency: Int): Array[Pixel] = {
       val colorsSorted = sortPoints(colors.toSeq)
       val tempsInterpolated: ParIterable[Temperature] = predictTemperatures(temps, locations)
       val pixels = new Array[Pixel](locations.size)
@@ -35,14 +34,16 @@ object ParVisualizer {
       Location(latStart - latIdx * latStep, lonStart + lonIdx * lonStep)
     }
   }
+
   import Implicits._
 
   def sortPoints(colors: Seq[(Temperature, Color)]): Seq[(Temperature, Color)] = {
     colors.sortBy { case (temp, _) => temp }
   }
 
-  val epsilon = 1E-5
-  val DEFAULT_P = 3.0
+  private val DEFAULT_P = 3.0
+  private val COLOR_MAX = 255
+  private val epsilon = 1E-5
 
   def interpolateColor(points: Seq[(Temperature, Color)], value: Temperature): Color = {
     VisualizationMath.interpolateColor(sortPoints(points), value)
@@ -79,25 +80,15 @@ object ParVisualizer {
     */
   def predictTemperature(temperatures: Iterable[(Location, Temperature)], location: Location,
                          P: Double = DEFAULT_P): Temperature = {
-    val distanceTemperatures = temperatures.map {
-      case (tempLocation, temp) => (VisualizationMath.sphereDistance(tempLocation, location), temp)
-    }
-
-    val minDistance = distanceTemperatures.minBy(_._1)
-
-    if (minDistance._1 <= epsilon) {
-      minDistance._2
-    } else {
-      val (nominator, denominator) = temperatures.aggregate((0.0, 0.0))({
-        case ((nomAcc: Distance, denomAcc: Temperature), (xi: Location, ui: Temperature)) =>
-          val d = sphereDistance(location, xi)
-          val wi = w(d, P)
-          (nomAcc + wi * ui, denomAcc + wi)
-      }, {
-        (a: (Temperature, Temperature), b: (Temperature, Temperature)) =>
-          (a._1 + b._1, a._2 + b._2)
-      })
-      nominator / denominator
-    }
+    val (nominator, denominator) = temperatures.aggregate((0.0, 0.0))({
+      case ((nomAcc: VisualizationMath.Distance, denomAcc: Temperature), (xi: Location, ui: Temperature)) =>
+        val d = VisualizationMath.sphereDistance(location, xi) max epsilon
+        val wi = VisualizationMath.w(d, P)
+        (nomAcc + wi * ui, denomAcc + wi)
+    }, {
+      (a: (Temperature, Temperature), b: (Temperature, Temperature)) =>
+        (a._1 + b._1, a._2 + b._2)
+    })
+    nominator / denominator
   }
 }

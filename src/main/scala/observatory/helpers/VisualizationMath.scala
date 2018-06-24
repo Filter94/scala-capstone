@@ -9,9 +9,7 @@ object VisualizationMath {
 
   def tempDistance(a: Temperature, b: Temperature): Distance = abs(a - b)
 
-  val epsilon = 1E-5
   private val R = 6372.8
-  val COLOR_MAX = 255
   type Distance = Double
 
   def sphereDistance(a: Location, b: Location): Distance = {

@@ -37,6 +37,8 @@ object SparkVisualizer {
   }
 
   val epsilon = 1E-5
+  private val DEFAULT_P = 3.0
+  private val COLOR_MAX = 255
 
 
   /*  This agggregator is inefficient with datasets
@@ -64,8 +66,7 @@ object SparkVisualizer {
           def outputEncoder: Encoder[Temperature] = Encoders.scalaDouble
         }.toColumn  */
   def predictTemperatures(temperatures: Dataset[TempByLocation],
-                          locations: Dataset[Location]): Dataset[(Location, Temperature)] = {
-    val P = 3
+                          locations: Dataset[Location], P: Double = DEFAULT_P): Dataset[(Location, Temperature)] = {
     temperatures // TODO: optimize
       .crossJoin(locations)
       .map { row =>

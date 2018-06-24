@@ -65,7 +65,7 @@ trait ManipulationTest extends FunSuite with Checkers {
     assert(deviationGrid(GridLocation(90, 179)) === (10.0 +- epsilon))
   }
 
-  test("Grid implementations effectiveness comparison") {
+  test("Grid implementations effectiveness") {
     val standardConfig = config(
       Key.exec.minWarmupRuns -> 20,
       Key.exec.maxWarmupRuns -> 40,

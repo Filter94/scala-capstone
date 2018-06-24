@@ -4,14 +4,8 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.{DoubleType, IntegerType, StructField, StructType}
 
 import scala.math._
-import observatory.helpers.VisualizationMath.epsilon
 
 object Location {
-
-  def equals(a: Location, b: Location): Boolean = {
-    math.abs(a.lon - b.lon) < epsilon && math.abs(a.lat - b.lat) < epsilon
-  }
-
   def fromLocationRow(locationRow: Row): Location = {
     Location(locationRow.getAs[Double]("lat"), locationRow.getAs[Double]("lon"))
   }
@@ -22,25 +16,6 @@ object Location {
       case idx: Int => row.getAs[Row](idx)
     }
     fromLocationRow(locationRow)
-  }
-
-  def gridLocation(location: Location) = GridLocation(math.round(location.lat).toInt, math.round(location.lon).toInt)
-  // top left, top right, bottom left, bottom right
-  def surroundingGridLocations(location: Location): GridLocationsSquare = {
-    val lat = location.lat.ceil.toInt
-    val lon = location.lon.floor.toInt
-    GridLocationsSquare(
-      GridLocation(lat, lon),
-      GridLocation(lat, lon + 1),
-      GridLocation(lat - 1, lon),
-      GridLocation(lat - 1, lon + 1))
-  }
-  def cellPoint(location: Location): CellPoint = {
-    val lat = location.lat.ceil.toInt
-    val lon = location.lon.floor.toInt
-    val lonFraction = location.lon - lon
-    val latFraction = lat - location.lat
-    CellPoint(lonFraction, latFraction)
   }
 }
 
@@ -53,7 +28,27 @@ case class GridLocationsSquare(topLeft: GridLocation, topRight: GridLocation,
   * @param lat Degrees of latitude, -90 ≤ lat ≤ 90
   * @param lon Degrees of longitude, -180 ≤ lon ≤ 180
   */
-case class Location(lat: Double, lon: Double)
+case class Location(lat: Double, lon: Double) {
+  lazy val gridSquare: GridLocationsSquare = {
+    val latTopLeft = lat.ceil.toInt
+    val lonTopLeft = lon.floor.toInt
+    GridLocationsSquare(
+      GridLocation(latTopLeft, lonTopLeft),
+      GridLocation(latTopLeft, lonTopLeft + 1),
+      GridLocation(latTopLeft - 1, lonTopLeft),
+      GridLocation(latTopLeft - 1, lonTopLeft + 1))
+  }
+
+  lazy val cellPoint: CellPoint = {
+    val latTopLeft = lat.ceil.toInt
+    val lonTopLeft = lon.floor.toInt
+    val lonFraction = lon - lonTopLeft
+    val latFraction = latTopLeft - lat
+    CellPoint(lonFraction, latFraction)
+  }
+
+  lazy val gridLocation: GridLocation = GridLocation(math.round(lat).toInt, math.round(lon).toInt)
+}
 
 case class TempByLocation(location: Location, temperature: Temperature)
 
@@ -69,16 +64,12 @@ case class LocationWindow(topLeft: Location, bottomRight: Location)
   * @param zoom Zoom level, 0 ≤ zoom ≤ 19
   */
 case class Tile(x: Int, y: Int, zoom: Int) {
-  def location: Location = {
+  lazy val location: Location = {
     val n = pow(2.0, zoom)
     val lon = x / n * 360.0 - 180.0
     val lat = toDegrees(atan(sinh(Pi * (1 - 2 * (y / n)))))
     Location(lat, lon)
   }
-}
-
-object GridLocation {
-  def location(gridLocation: GridLocation): Location = Location(gridLocation.lat, gridLocation.lon)
 }
 
 /**
@@ -88,7 +79,9 @@ object GridLocation {
   * @param lat Circle of latitude in degrees, -89 ≤ lat ≤ 90
   * @param lon Line of longitude in degrees, -180 ≤ lon ≤ 179
   */
-case class GridLocation(lat: Int, lon: Int)
+case class GridLocation(lat: Int, lon: Int) {
+  lazy val location: Location = Location(lat, lon)
+}
 
 /**
   * Introduced in Week 5. Represents a point inside of a grid cell.
@@ -114,7 +107,7 @@ case class Id(stnId: Option[STN], wbanId: Option[WBAN]) {
 object TemperatureRow {
   type FlatTemp = (Option[STN], Option[WBAN], Month, Day, Temperature)
 
-  val flatSchema: StructType = StructType(
+  lazy val flatSchema: StructType = StructType(
     Seq(
       StructField("stn", IntegerType, nullable = false),
       StructField("wban", IntegerType, nullable = true),
@@ -145,7 +138,7 @@ case class TemperatureRow(id: Id, month: Month, day: Day, temp: Temperature) {
 object StationRow {
   type FlatStation = (Option[STN], Option[WBAN], Double, Double)
 
-  val flatSchema: StructType = StructType(
+  lazy val flatSchema: StructType = StructType(
     Seq(
       StructField("stn", IntegerType, nullable = true),
       StructField("wban", IntegerType, nullable = true),
