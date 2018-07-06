@@ -20,7 +20,7 @@ object ParInteractor extends Interactor {
                        (temperatures: Iterable[(Location, Temperature)],
                         colors: Iterable[(Temperature, Color)], tile: Tile)
                        (implicit computePixels: (Iterable[(Location, Temperature)], ParIterable[Location],
-                         Iterable[(Temperature, Color)], Int) => Array[Pixel]): Image = {
+                         Seq[(Temperature, Color)], Int) => Array[Pixel]): Image = {
     val targetZoom = (log(sizeX) / log(2)).toInt
     val zoomedTiles = pow(2, targetZoom).toInt
     val xStart = zoomedTiles * tile.x

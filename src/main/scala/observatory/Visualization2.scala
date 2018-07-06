@@ -50,7 +50,6 @@ object Visualization2 {
                       locations: ParIterable[Location], colors: Iterable[(Temperature, Color)],
                       transparency: Int): Array[Pixel] = {
       val pixels = new Array[Pixel](locations.size)
-      val sortedColors = colors.toSeq.sortBy{case (temp, _) => temp}
       for {
         (location, i: Int) <- locations.zipWithIndex
       } {
@@ -59,7 +58,7 @@ object Visualization2 {
           grid(square.topLeft), grid(square.bottomLeft),
           grid(square.topRight), grid(square.bottomRight))
         val interpolatedTemp = bilinearInterpolation(location.cellPoint, d00, d01, d10, d11)
-        val color = Visualization.interpolateColor(sortedColors, interpolatedTemp)
+        val color = Visualization.interpolateColor(colors, interpolatedTemp)
         pixels(i) = Pixel(color.red, color.green, color.blue, transparency)
       }
       pixels

@@ -17,6 +17,13 @@ object Location {
     }
     fromLocationRow(locationRow)
   }
+
+  val schema: StructType = StructType(
+    Seq(
+      StructField("lat", DoubleType, nullable = false),
+      StructField("lon", DoubleType, nullable = false)
+    )
+  )
 }
 
 case class GridLocationsSquare(topLeft: GridLocation, topRight: GridLocation,

@@ -9,12 +9,19 @@ import org.scalatest.junit.JUnitRunner
 class Benchmarking extends FunSuite {
   test("Average temperature ends in reasonable time on big data") {
     val res = Extraction.locateTemperatures(2018, "/stations.csv", "/1975.csv")
-    assert(res.nonEmpty)
-    val avg = Extraction.locationYearlyAverageRecords(res)
-    assert(avg.nonEmpty)
+    print("Finished reading.")
+    Extraction.locationYearlyAverageRecords(res)
   }
 
-  test("Image test ends in reasonable time") {
+  test("Average temperature ends in reasonable time on big data spark") {
+    val res = Extraction.locateTemperaturesSpark(2018, "/stations.csv", "/1975.csv")
+    print("Finished reading.")
+    Extraction.locationYearlyAverageRecordsSpark(res).collect()
+  }
+
+  test("Tile image with big data") {
+    val temperaturesByDate = Extraction.locateTemperaturesSpark(1975, "/stations.csv", "/1975.csv")
+    val temperatures = Extraction.locationYearlyAverageRecordsSpark(temperaturesByDate).collect()
     val colors: Seq[(Temperature, Color)] = Seq(
       (60, Color(255, 255, 255)),
       (32, Color(255, 0, 0)),
@@ -24,27 +31,14 @@ class Benchmarking extends FunSuite {
       (-27, Color(255, 0, 255)),
       (-50, Color(33, 255, 107)),
       (-60, Color(0, 0, 0)))
-    val temperaturesByDate = Extraction.locateTemperatures(1975, "/stations.csv", "/1975.csv")
-    val temperatures = Extraction.locationYearlyAverageRecords(temperaturesByDate)
-    val image = Visualization.visualize(temperatures, colors)
-    image.output("big data test.png")
-  }
-
-  test("Tile image with big data") {
-    val temperaturesByDate = Extraction.locateTemperatures(1975, "/stations.csv", "/1975.csv")
-    val temperatures = Extraction.locationYearlyAverageRecordsSpark(temperaturesByDate)
-    val colors: Seq[(Temperature, Color)] = Seq(
-      (-1.0, Color(255, 0, 0)),
-      (-100.0, Color(0, 0, 255)))
     val tile = Tile(0, 0, 0)
     val image = Interaction.tile(temperatures, colors, tile)
     image.output(s"tile big data.png")
   }
 
   test("Grid image with big data") {
-    val temperaturesByDate = Extraction.locateTemperaturesSpark(1975, "/stations.csv", "/1975.csv")
-    val temperatures = Extraction.locationYearlyAverageRecordsSpark(temperaturesByDate)
-      .sample(withReplacement = false, 0.5).collect()
+    val temperaturesByDate = Extraction.locateTemperatures(1975, "/stations.csv", "/1975.csv")
+    val temperatures = Extraction.locationYearlyAverageRecords(temperaturesByDate)
     val colors: Seq[(Temperature, Color)] = Seq(
       (60, Color(255, 255, 255)),
       (32, Color(255, 0, 0)),

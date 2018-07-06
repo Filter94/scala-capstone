@@ -1,7 +1,9 @@
 package observatory
 
 import com.sksamuel.scrimage.Image
+import observatory.helpers.VisualizationMath
 import observatory.helpers.par.ParVisualizer
+import observatory.helpers.spark.SparkVisualizer
 
 /**
   * 2nd milestone: basic visualization
@@ -23,7 +25,7 @@ object Visualization {
     * @return The color that corresponds to `value`, according to the color scale defined by `points`
     */
   def interpolateColor(points: Iterable[(Temperature, Color)], value: Temperature): Color = {
-    ParVisualizer.interpolateColor(points.toSeq, value)
+    VisualizationMath.interpolateColor(VisualizationMath.sortPoints(points.toSeq), value)
   }
 
   /**
@@ -32,7 +34,7 @@ object Visualization {
     * @return A 360×180 image where each pixel shows the predicted temperature at its location
     */
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
-    ParVisualizer.visualize(temperatures, colors)
+    SparkVisualizer.visualize(temperatures, colors)
   }
 
 }

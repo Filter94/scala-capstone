@@ -3,6 +3,9 @@ package observatory
 
 import java.io.File
 
+import observatory.helpers.SparkContextKeeper
+import observatory.helpers.par.ParVisualizer
+import observatory.helpers.spark.SparkVisualizer
 import org.scalactic.{Equality, TolerantNumerics}
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
@@ -188,5 +191,22 @@ trait VisualizationTest extends FunSuite with Checkers {
       (-100.0, Color(0, 0, 255)))
     val image = Visualization.visualize(temps, colors)
     image.output("pepsi.png")
+  }
+
+  test("Spark and par implementations are equivalent") {
+    val temps: Seq[(Location, Temperature)] = Seq(
+      (Location(45.0, -90.0), -1.0),
+      (Location(-45.0, 0.0), -100.0))
+    val WIDTH = 10
+    val HEIGHT = 10
+    import ParVisualizer.Implicits.locationsGenerator
+    val locations = Range(0, WIDTH * HEIGHT).par
+      .map(i => locationsGenerator(360, 180)(i))
+    val parTemps = ParVisualizer.predictTemperatures(temps, locations)
+
+    import SparkContextKeeper.spark.implicits._
+    val locationsSpark = SparkContextKeeper.spark.createDataset(locations.seq)
+    val sparkTemps = SparkVisualizer.predictTemperatures(SparkVisualizer.toDs(temps), locationsSpark).collect().toIterable
+    assert(parTemps.seq == sparkTemps)
   }
 }

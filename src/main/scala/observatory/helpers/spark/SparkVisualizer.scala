@@ -4,22 +4,28 @@ import com.sksamuel.scrimage.{Image, Pixel}
 import observatory._
 import observatory.helpers.SparkContextKeeper.spark
 import observatory.helpers.SparkContextKeeper.spark.implicits._
-import observatory.helpers.VisualizationMath._
-import observatory.helpers.{VisualizationMath, Visualizer}
+import observatory.helpers.VisualizationMath.{sphereDistance, w}
+import observatory.helpers.VisualizationMath
+import observatory.helpers.spark.aggregators.{InterpolatedTempDs, InterpolatedTempSql}
 import org.apache.spark.sql.Dataset
 
 import scala.math._
 
 object SparkVisualizer {
+  private val DEFAULT_P = 3.0
+  private val COLOR_MAX = 255
+  private val epsilon: Double = 1E-5
+
   def computePixels(temps: Dataset[TempByLocation], locations: Dataset[Location],
                     colors: Seq[(Temperature, Color)], transparency: Int): Array[Pixel] = {
+    val colorsSorted = VisualizationMath.sortPoints(colors)
     val tempsInterpolated = predictTemperatures(temps, locations)
-      .orderBy($"location.lat".desc, $"location.lon")
-      .select($"temp".as[Temperature]).collect()
+      .select($"temperature".as[Temperature])
+      .collect()
     for {
       temp <- tempsInterpolated
     } yield {
-      val color = interpolateColor(colors, temp)
+      val color = VisualizationMath.interpolateColor(colorsSorted, temp)
       Pixel(color.red, color.green, color.blue, transparency)
     }
   }
@@ -36,62 +42,64 @@ object SparkVisualizer {
     Location(latStart - latIdx * latStep, lonStart + lonIdx * lonStep)
   }
 
-  val epsilon = 1E-5
-  private val DEFAULT_P = 3.0
-  private val COLOR_MAX = 255
-
-
-  /*  This agggregator is inefficient with datasets
-      private def interpolatedTemp(P: Int = 3) =
-        new Aggregator[(Location, Location, Temperature), (Temperature, Temperature), Temperature] {
-          // Pure ds / df aggregator. Haven't figured out how to use it with DS efficiently
-          override def zero: (Temperature, Temperature) = (0.0, 0.0)
-
-          override def merge(b: (Temperature, Temperature), a: (Distance, Temperature)): (Distance, Temperature) =
-            (a._1 + b._1, a._2 + b._2)
-
-          override def reduce(b1: (Temperature, Temperature), b2: (Location, Location, Temperature)): (Temperature, Temperature) =
-            (b1, b2) match {
-              case ((nomAcc, denomAcc), (xi, location, ui)) =>
-                val d = max(sphereDistance(location, xi), epsilon)
-                val wi = w(location, d, P)
-                (nomAcc + wi * ui, denomAcc + wi)
-            }
-
-          override def finish(reduction: (Temperature, Temperature)): Temperature = reduction._1 / reduction._2
-
-          def bufferEncoder: Encoder[(Distance, Temperature)] =
-            Encoders.tuple(Encoders.scalaDouble, Encoders.scalaDouble)
-
-          def outputEncoder: Encoder[Temperature] = Encoders.scalaDouble
-        }.toColumn  */
+// fastest implementation so far. Will fail if the temperatures dataset won't fit into memory
   def predictTemperatures(temperatures: Dataset[TempByLocation],
-                          locations: Dataset[Location], P: Double = DEFAULT_P): Dataset[(Location, Temperature)] = {
-    temperatures // TODO: optimize
+                          locations: Dataset[Location], P: Double = DEFAULT_P): Dataset[Temperature] = {
+    val temps = spark.sparkContext.broadcast(temperatures.collect())
+    val res = for {
+      location <- locations
+    } yield {
+      val comp = temps.value.map {
+        tempByLocation: TempByLocation =>
+          val d = sphereDistance(location, tempByLocation.location) max epsilon
+          val wi = w(d, P)
+          (wi * tempByLocation.temperature, wi)
+      }
+      val (nominator: Temperature, denominator: Temperature) = comp.reduce {
+        (a: (Temperature, Temperature), b: (Temperature, Temperature)) =>
+          (a._1 + b._1, a._2 + b._2)
+      }
+      nominator / denominator
+    }
+    res.toDF("temperature").as[Temperature]
+  }
+
+//  Fast, memory safe implementation
+  private val it = new InterpolatedTempSql(DEFAULT_P, epsilon)
+  def predictTemperaturesSql(temperatures: Dataset[TempByLocation],
+                          locations: Dataset[Location], P: Double = DEFAULT_P): Dataset[Temperature] = {
+    temperatures
       .crossJoin(locations)
       .map { row =>
         (Location(row.getAs("lat"),
           row.getAs("lon")),
           Location.fromRow(row, "location"),
           row.getAs[Temperature]("temperature"))
-      }.rdd
-      .keyBy(row => row._1)
-      .aggregateByKey((0.0, 0.0))(
-        { (b1: (Temperature, Temperature), b2: (Location, Location, Temperature)) =>
-          (b1, b2) match {
-            case ((nomAcc, denomAcc), (xi, location, ui)) =>
-              val d = max(sphereDistance(location, xi), epsilon)
-              val wi = w(d, P)
-              (nomAcc + wi * ui, denomAcc + wi)
-          }
-        }, {
-          (b: (Temperature, Temperature), a: (Distance, Temperature)) =>
-            (a._1 + b._1, a._2 + b._2)
-        })
-      .mapValues {
-        case (nominator, denominator) =>
-          nominator / denominator
-      }.toDF("location", "temp").as[(Location, Temperature)]
+      }
+      .groupBy($"_1".as("location"))
+      .agg(it($"_1", $"_2", $"_3").as("temperature"))
+      .orderBy($"location.lat".desc, $"location.lon")
+      .select($"temperature".as[Temperature])
+  }
+
+
+//  Seems a little bit slower, type safe
+  private val interpolatedTemp = new InterpolatedTempDs(DEFAULT_P, epsilon).toColumn
+  def predictTemperaturesDs(temperatures: Dataset[TempByLocation],
+                          locations: Dataset[Location], P: Double = DEFAULT_P): Dataset[Temperature] = {
+    temperatures
+      .crossJoin(locations)
+      .map { row =>
+        (Location(row.getAs("lat"),
+          row.getAs("lon")),
+          Location.fromRow(row, "location"),
+          row.getAs[Temperature]("temperature"))
+      }
+      .groupByKey(_._1)
+      .agg(interpolatedTemp.name("temperature"))
+      .toDF("location", "temperature")
+      .orderBy($"location.lat".desc, $"location.lon")
+      .select($"temperature".as[Temperature])
   }
 
   /**
@@ -114,22 +122,25 @@ object SparkVisualizer {
   def visualizeTile(width: Int, height: Int, transparency: Int = COLOR_MAX, tile: Tile)
                    (temperatures: Dataset[TempByLocation], colors: Iterable[(Temperature, Color)]): Image = {
     val targetZoom = (log(width) / log(2)).toInt
-    val xStart = targetZoom * tile.x
-    val yStart = targetZoom * tile.y
-    def tileLocationsGenerator(WIDTH: Int, HEIGHT: Int, tile: Tile)(i: Long): Location = {
-      val latIdx = (i / WIDTH).toInt
-      val lonIdx = (i % WIDTH).toInt
+    val zoomedTiles = pow(2, targetZoom).toInt
+    val xStart = zoomedTiles * tile.x
+    val yStart = zoomedTiles * tile.y
+
+    def tileLocationsGenerator(tile: Tile)(i: Long): Location = {
+      val latIdx = (i / width).toInt
+      val lonIdx = (i % width).toInt
       val zoomedTile = Tile(xStart + lonIdx, yStart + latIdx, targetZoom + tile.zoom)
       zoomedTile.location
     }
+
     val locations: Dataset[Location] = spark.range(width * height)
-      .map(i => tileLocationsGenerator(width, height, tile)(i))
+      .map(i => tileLocationsGenerator(tile)(i))
     val pixels = computePixels(temperatures, locations, colors.toSeq, transparency)
     Image(width, height, pixels)
   }
 
   def predictTemperature(temperatures: Iterable[(Location, Temperature)], location: Location): Temperature =
-    predictTemperatures(toDs(temperatures), spark.createDataset(List(location))).first()._2
+    predictTemperatures(toDs(temperatures), spark.createDataset(List(location))).first()
 
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
     visualize(360, 180, COLOR_MAX)(toDs(temperatures), colors)
@@ -138,21 +149,4 @@ object SparkVisualizer {
   def toDs(data: Iterable[(Location, Temperature)]): Dataset[TempByLocation] = spark.createDataset(data.map {
     case (location, temp) => TempByLocation(location, temp)
   }.toSeq)
-}
-
-trait SparkVisualizer extends Visualizer {
-  def predictTemperature(temperatures: Iterable[(Location, Temperature)], location: Location): Temperature =
-    SparkVisualizer.predictTemperature(temperatures, location)
-
-  def interpolateColor(points: Iterable[(Temperature, Color)], value: Temperature): Color = {
-    VisualizationMath.interpolateColor(points.toSeq, value)
-  }
-
-  def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image =
-    SparkVisualizer.visualize(temperatures, colors)
-
-  def visualizeTile(width: Int, height: Int, transparency: Int, tile: Tile)
-                   (temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
-    SparkVisualizer.visualizeTile(width, height, transparency, tile)(SparkVisualizer.toDs(temperatures), colors)
-  }
 }

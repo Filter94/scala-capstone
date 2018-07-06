@@ -8,6 +8,7 @@ object SparkContextKeeper {
   val spark: SparkSession = SparkSession
     .builder()
     .appName("Capstone spark")
-    .config("spark.master", "local")
+    .config("spark.master", "local[*]")
+    .config("spark.sql.shuffle.partitions", 4)
     .getOrCreate()
 }

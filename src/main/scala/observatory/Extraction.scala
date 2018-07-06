@@ -3,7 +3,6 @@ package observatory
 import java.nio.file.Paths
 import java.time.LocalDate
 
-import observatory.Extraction.locationYearlyAverageRecordsSpark
 import org.apache.spark.rdd.RDD
 import observatory.helpers.SparkContextKeeper.spark
 import org.apache.spark.sql.Dataset
@@ -78,8 +77,8 @@ object Extraction {
       .groupBy(_.location)
       .mapValues {
         location =>
-          location.foldLeft(0.0)(
-            (t, r) => t + r.temperature) / location.size
+          location.foldLeft(0.0)
+          {(t, r) => t + r.temperature} / location.size
       }.seq
   }
 

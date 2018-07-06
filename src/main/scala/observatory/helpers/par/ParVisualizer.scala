@@ -9,14 +9,13 @@ import scala.collection.parallel.immutable.ParIterable
 object ParVisualizer {
   object Implicits {
     implicit def computePixels(temps: Iterable[(Location, Temperature)], locations: ParIterable[Location],
-                               colors: Iterable[(Temperature, Color)], transparency: Int): Array[Pixel] = {
-      val colorsSorted = sortPoints(colors.toSeq)
+                               colors: Seq[(Temperature, Color)], transparency: Int): Array[Pixel] = {
       val tempsInterpolated: ParIterable[Temperature] = predictTemperatures(temps, locations)
       val pixels = new Array[Pixel](locations.size)
       for {
         (temp, i) <- tempsInterpolated.zipWithIndex
       } {
-        val color = interpolateColor(colorsSorted, temp)
+        val color = VisualizationMath.interpolateColor(colors, temp)
         pixels(i) = Pixel(color.red, color.green, color.blue, transparency)
       }
       pixels
@@ -37,17 +36,9 @@ object ParVisualizer {
 
   import Implicits._
 
-  def sortPoints(colors: Seq[(Temperature, Color)]): Seq[(Temperature, Color)] = {
-    colors.sortBy { case (temp, _) => temp }
-  }
-
   private val DEFAULT_P = 3.0
   private val COLOR_MAX = 255
   private val epsilon = 1E-5
-
-  def interpolateColor(points: Seq[(Temperature, Color)], value: Temperature): Color = {
-    VisualizationMath.interpolateColor(sortPoints(points), value)
-  }
 
   def predictTemperatures(temperatures: Iterable[(Location, Temperature)],
                           locations: ParIterable[Location]): ParIterable[Temperature] = {
@@ -60,10 +51,11 @@ object ParVisualizer {
                (temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)])
                (implicit locationsGenerator: (Int, Int) => Int => Location,
                 computePixels: (Iterable[(Location, Temperature)], ParIterable[Location],
-                  Iterable[(Temperature, Color)], Int) => Array[Pixel]): Image = {
+                  Seq[(Temperature, Color)], Int) => Array[Pixel]): Image = {
     val locations = Range(0, WIDTH * HEIGHT).par
       .map(i => locationsGenerator(WIDTH, HEIGHT)(i))
-    val pixels = computePixels(temperatures, locations, colors, transparency)
+    val colorsSorted = VisualizationMath.sortPoints(colors.toSeq)
+    val pixels = computePixels(temperatures, locations, colorsSorted, transparency)
     Image(WIDTH, HEIGHT, pixels)
   }
 

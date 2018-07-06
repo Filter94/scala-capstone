@@ -41,6 +41,10 @@ object VisualizationMath {
     }
   }
 
+  def sortPoints(colors: Seq[(Temperature, Color)]): Seq[(Temperature, Color)] = {
+    colors.sortBy { case (temp, _) => temp }
+  }
+
   /**
     * @param points Pairs containing a value and its associated color
     * @param value  The value to interpolate
