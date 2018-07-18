@@ -22,8 +22,13 @@ object Interaction {
     val width = 256 / upscaleFactor
     val height = 256 / upscaleFactor
     val transparency = 127
-    Visualizer(temperatures, colors, VisualizerConfiguration(width, height, transparency,
-      TileLocationsGenerator(width, height, tile))).visualize()
+    val configuration = new VisualizerConfiguration.Builder()
+      .setWidth(width)
+      .setHeight(height)
+      .setTransparency(transparency)
+      .setLocationsGenerator(TileLocationsGenerator(width, height, tile))
+      .build
+    Visualizer(temperatures, colors, configuration).visualize()
       .scale(upscaleFactor)
   }
   /**

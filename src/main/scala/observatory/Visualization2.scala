@@ -46,7 +46,12 @@ object Visualization2 {
     val width = 256 / upscaleFactor
     val height = 256 / upscaleFactor
     val transparency = 127
-    GridVisualizer(colors, grid, VisualizerConfiguration(width, height, transparency,
-      TileLocationsGenerator(width, height, tile))).visualize().scale(upscaleFactor)
+    val config = new VisualizerConfiguration.Builder()
+      .setWidth(width)
+      .setHeight(height)
+      .setTransparency(transparency)
+      .setLocationsGenerator(TileLocationsGenerator(width, height, tile))
+      .build
+    GridVisualizer(colors, grid, config).visualize().scale(upscaleFactor)
   }
 }

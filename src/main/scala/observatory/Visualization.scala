@@ -1,7 +1,7 @@
 package observatory
 
 import com.sksamuel.scrimage.Image
-import observatory.helpers.VisualizationHelper
+import observatory.helpers.{VisualizationHelper, VisualizerConfiguration}
 import observatory.helpers.predictors.ParPredictor
 import observatory.helpers.visualizers.spark
 
@@ -33,7 +33,8 @@ object Visualization {
     * @return A 360×180 image where each pixel shows the predicted temperature at its location
     */
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
-    spark.Visualizer(temperatures, colors).visualize()
+    val config = new VisualizerConfiguration.Builder().build
+    spark.Visualizer(temperatures, colors, config).visualize()
   }
 
 }

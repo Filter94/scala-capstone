@@ -9,7 +9,7 @@ import scala.collection.parallel.ParIterable
 
 object Visualizer {
   def apply(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)],
-            configuration: VisualizerConfiguration = VisualizerConfiguration()): Visualizer =
+            configuration: VisualizerConfiguration): Visualizer =
     new Visualizer(temperatures, colors, configuration)
 }
 
