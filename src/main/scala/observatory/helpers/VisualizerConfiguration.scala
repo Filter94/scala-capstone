@@ -28,8 +28,8 @@ object VisualizerConfiguration {
       this
     }
 
-    def setHeight(newheight: Int): Builder = {
-      width = newheight
+    def setHeight(newHeight: Int): Builder = {
+      height = newHeight
       this
     }
 
