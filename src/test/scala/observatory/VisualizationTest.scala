@@ -3,9 +3,11 @@ package observatory
 
 import java.io.File
 
-import observatory.helpers.SparkContextKeeper
-import observatory.helpers.par.ParVisualizer
-import observatory.helpers.spark.SparkVisualizer
+import observatory.helpers.{SparkContextKeeper, VisualizationHelper}
+import observatory.helpers.generators.NaiveGenerator
+import observatory.helpers.predictors.ParPredictor
+import observatory.helpers.predictors.spark.BroadcastPredictor
+import observatory.helpers.visualizers.spark.Visualizer
 import org.scalactic.{Equality, TolerantNumerics}
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
@@ -197,16 +199,17 @@ trait VisualizationTest extends FunSuite with Checkers {
     val temps: Seq[(Location, Temperature)] = Seq(
       (Location(45.0, -90.0), -1.0),
       (Location(-45.0, 0.0), -100.0))
+    val epsilon = 1E-5
+    val p = 3.0
     val WIDTH = 10
     val HEIGHT = 10
-    import ParVisualizer.Implicits.locationsGenerator
     val locations = Range(0, WIDTH * HEIGHT).par
-      .map(i => locationsGenerator(360, 180)(i))
-    val parTemps = ParVisualizer.predictTemperatures(temps, locations)
+      .map(i => NaiveGenerator().get(i))
+    val parTemps = ParPredictor(epsilon, p).predictTemperatures(temps, locations)
 
     import SparkContextKeeper.spark.implicits._
     val locationsSpark = SparkContextKeeper.spark.createDataset(locations.seq)
-    val sparkTemps = SparkVisualizer.predictTemperatures(SparkVisualizer.toDs(temps), locationsSpark).collect().toIterable
+    val sparkTemps = BroadcastPredictor(epsilon, p).predictTemperatures(Visualizer.toDs(temps), locationsSpark).collect().toIterable
     assert(parTemps.seq == sparkTemps)
   }
 }

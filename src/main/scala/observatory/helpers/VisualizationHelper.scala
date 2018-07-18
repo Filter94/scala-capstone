@@ -3,15 +3,27 @@ package observatory.helpers
 import observatory.{Color, Location, Temperature}
 import scala.math._
 
-object VisualizationMath {
+object VisualizationHelper {
+  // earth radius
   private val R = 6372.8
   type Distance = Double
 
-  def interpolateComponent(x1: Temperature, x2: Temperature, value: Temperature)(y1: Int, y2: Int): Int =
+  /**
+    * Linear interpolation of a value between points x1, x2 with values y1, y2
+    * @param x1 - left point
+    * @param x2 - right value
+    * @param value x coordinate of unknown value
+    * @param y1 - left value
+    * @param y2 - right value
+    * @return y coordinate a searched value
+    */
+  def interpolateComponent(x1: Temperature, x2: Temperature, value: Double)(y1: Int, y2: Int): Int =
     math.round(y1 + ((y2 - y1) / (x2 - x1) * (value - x1))).toInt
 
-
-
+  /**
+    * https://en.wikipedia.org/wiki/Great-circle_distance
+    * Computes great circle distance between location a and b
+    */
   def sphereDistance(a: Location, b: Location): Distance = {
     val dLat = (b.lat - a.lat).toRadians
     val dLon = (b.lon - a.lon).toRadians
@@ -21,8 +33,20 @@ object VisualizationMath {
     R * distance
   }
 
+  /**
+    * w parameter of a inverse distance weighting
+    * @param d - distance between the point
+    * @param p - sharpness power parameter
+    * @return
+    */
   def w(d: Distance, p: Double): Temperature = 1 / math.pow(d, p)
 
+  /**
+    * For given sequence of points returns an interval which includes given temp point.
+    * @param points sorted sequence of points
+    * @param temp given point
+    * @return Tuple(a, b) where a - is left border and b is right border. None corresponds to a infinity.
+    */
   def findInterval(points: Seq[(Temperature, Color)], temp: Temperature): (Option[(Temperature, Color)],
     Option[(Temperature, Color)]) = {
     val rightWithIndex = points.zipWithIndex.find {

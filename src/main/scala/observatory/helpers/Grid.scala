@@ -8,6 +8,12 @@ object Grid {
   }
 }
 
+/**
+  * GridLocation => Temperature function wrapper for a cached access
+  * @param f grid function.
+  * @param width - width of a grid
+  * @param height - height of a grid
+  */
 class Grid private (f: GridLocation => Temperature)(width: Int, height: Int) {
   private val cache = Array.fill(width * height)(Double.NaN)
   //TODO: generalize relative to size

@@ -1,8 +1,9 @@
 package observatory
 
 import com.sksamuel.scrimage.Image
-import observatory.helpers.par.ParInteractor
-import observatory.helpers.spark.SparkInteractor
+import observatory.helpers.VisualizerConfiguration
+import observatory.helpers.generators.TileLocationsGenerator
+import observatory.helpers.visualizers.par.Visualizer
 
 import math.{pow, _}
 
@@ -17,7 +18,13 @@ object Interaction {
   def tileLocation(tile: Tile): Location = tile.location
 
   def tile(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)], tile: Tile): Image = {
-    SparkInteractor.tile(temperatures, colors, tile)
+    val upscaleFactor = 1
+    val width = 256 / upscaleFactor
+    val height = 256 / upscaleFactor
+    val transparency = 127
+    Visualizer(temperatures, colors, VisualizerConfiguration(width, height, transparency,
+      TileLocationsGenerator(width, height, tile))).visualize()
+      .scale(upscaleFactor)
   }
   /**
     * Generates all the tiles for zoom levels 0 to 3 (included), for all the given years.

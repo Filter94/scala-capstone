@@ -1,9 +1,9 @@
-package observatory.helpers.spark.aggregators
+package observatory.helpers.predictors.spark.aggregators
 
+import observatory.helpers.VisualizationHelper.{Distance, sphereDistance, w}
 import observatory.{Location, Temperature}
-import observatory.helpers.VisualizationMath.{Distance, sphereDistance, w}
-import org.apache.spark.sql.{Encoder, Encoders, Row}
 import org.apache.spark.sql.expressions.Aggregator
+import org.apache.spark.sql.{Encoder, Encoders}
 
 import scala.math.max
 

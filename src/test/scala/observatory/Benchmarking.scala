@@ -91,7 +91,7 @@ class Benchmarking extends FunSuite {
     println(s"Grid time: $time ms")
   }
 
-  test("Visualization implementations effectiveness comparison") {
+  test("Visualization implementations tile vs grid effectiveness comparison") {
     val standardConfig = config(
       Key.exec.minWarmupRuns -> 20,
       Key.exec.maxWarmupRuns -> 40,

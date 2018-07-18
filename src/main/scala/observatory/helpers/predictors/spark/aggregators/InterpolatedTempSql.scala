@@ -1,12 +1,12 @@
-package observatory.helpers.spark.aggregators
+package observatory.helpers.predictors.spark.aggregators
 
 import observatory.Location
-import observatory.helpers.VisualizationMath.{sphereDistance, w}
+import observatory.helpers.VisualizationHelper.{sphereDistance, w}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.expressions.{MutableAggregationBuffer, UserDefinedAggregateFunction}
 import org.apache.spark.sql.types.{DataType, DoubleType, StructField, StructType}
 
-class InterpolatedTempSql(val P: Double, val epsilon: Double = 1E-5) extends UserDefinedAggregateFunction {
+class InterpolatedTempSql(val P: Double, val epsilon: Double) extends UserDefinedAggregateFunction {
   // This is the input fields for your aggregate function.
   override def inputSchema: org.apache.spark.sql.types.StructType =
     StructType(

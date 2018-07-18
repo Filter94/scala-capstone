@@ -1,9 +1,9 @@
 package observatory
 
-import com.sksamuel.scrimage.{Image, Pixel}
-import observatory.helpers.par.ParInteractor
-
-import scala.collection.parallel.ParIterable
+import com.sksamuel.scrimage.Image
+import observatory.helpers.VisualizerConfiguration
+import observatory.helpers.generators.TileLocationsGenerator
+import observatory.helpers.visualizers.par.GridVisualizer
 
 /**
   * 5th milestone: value-added information visualization
@@ -45,24 +45,8 @@ object Visualization2 {
     val upscaleFactor = 1
     val width = 256 / upscaleFactor
     val height = 256 / upscaleFactor
-
-    implicit def computePixels(temperatures: Iterable[(Location, Temperature)],
-                      locations: ParIterable[Location], colors: Iterable[(Temperature, Color)],
-                      transparency: Int): Array[Pixel] = {
-      val pixels = new Array[Pixel](locations.size)
-      for {
-        (location, i: Int) <- locations.zipWithIndex
-      } {
-        val square = location.gridSquare
-        val (d00, d01, d10, d11) = (
-          grid(square.topLeft), grid(square.bottomLeft),
-          grid(square.topRight), grid(square.bottomRight))
-        val interpolatedTemp = bilinearInterpolation(location.cellPoint, d00, d01, d10, d11)
-        val color = Visualization.interpolateColor(colors, interpolatedTemp)
-        pixels(i) = Pixel(color.red, color.green, color.blue, transparency)
-      }
-      pixels
-    }
-    ParInteractor.visualizeTile(width, height)(Iterable(), colors, tile).scale(upscaleFactor)
+    val transparency = 127
+    GridVisualizer(colors, grid, VisualizerConfiguration(width, height, transparency,
+      TileLocationsGenerator(width, height, tile))).visualize().scale(upscaleFactor)
   }
 }
