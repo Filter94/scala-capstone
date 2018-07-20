@@ -1,14 +1,10 @@
 package observatory
 
 
-import java.io.File
-
-import observatory.helpers.{SparkContextKeeper, VisualizationHelper}
-import observatory.helpers.generators.NaiveGenerator
-import observatory.helpers.predictors.ParPredictor
-import observatory.helpers.predictors.spark.BroadcastPredictor
-import observatory.helpers.visualizers.spark.Visualizer
-import org.scalactic.{Equality, TolerantNumerics}
+import observatory.visualizers.common.generators.NaiveGenerator
+import observatory.visualizers.par.InverseDistancePredictor
+import observatory.visualizers.spark.DataVisualizer
+import observatory.visualizers.spark.predictors.BroadcastPredictor
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 import org.scalactic.Tolerance._
@@ -205,11 +201,11 @@ trait VisualizationTest extends FunSuite with Checkers {
     val HEIGHT = 10
     val locations = Range(0, WIDTH * HEIGHT).par
       .map(i => NaiveGenerator().get(i))
-    val parTemps = ParPredictor(epsilon, p).predictTemperatures(temps, locations)
+    val parTemps = InverseDistancePredictor(epsilon, p).predictTemperatures(temps, locations)
 
     import SparkContextKeeper.spark.implicits._
     val locationsSpark = SparkContextKeeper.spark.createDataset(locations.seq)
-    val sparkTemps = BroadcastPredictor(epsilon, p).predictTemperatures(Visualizer.toDs(temps), locationsSpark).collect().toIterable
+    val sparkTemps = BroadcastPredictor(epsilon, p).predictTemperatures(DataVisualizer.toDs(temps), locationsSpark).collect().toIterable
     assert(parTemps.seq == sparkTemps)
   }
 }

@@ -1,9 +1,10 @@
-package observatory.helpers.visualizers.par
+package observatory.visualizers.par
 
 import com.sksamuel.scrimage.Pixel
 import observatory.Visualization2.bilinearInterpolation
 import observatory._
-import observatory.helpers.{VisualizationHelper, VisualizerConfiguration}
+import observatory.visualizers.common.VisualizerConfiguration
+import observatory.visualizers.common.interpolators.LinearInterpolator
 
 import scala.collection.parallel.ParIterable
 
@@ -18,7 +19,7 @@ object GridVisualizer {
   */
 class GridVisualizer(val grid: GridLocation => Temperature, val colors: Iterable[(Temperature, Color)],
                      val configuration: VisualizerConfiguration) extends ConfigurableVisuzlizer {
-  private val colorsSorted = VisualizationHelper.sortPoints(colors.toSeq)
+  private val interpolator = LinearInterpolator(colors)
 
   def computePixels(locations: ParIterable[Location]): Array[Pixel] = {
     val pixels = new Array[Pixel](locations.size)
@@ -30,7 +31,7 @@ class GridVisualizer(val grid: GridLocation => Temperature, val colors: Iterable
         grid(square.topLeft), grid(square.bottomLeft),
         grid(square.topRight), grid(square.bottomRight))
       val interpolatedTemp = bilinearInterpolation(location.cellPoint, d00, d01, d10, d11)
-      val color = VisualizationHelper.interpolateColor(colorsSorted, interpolatedTemp)
+      val color = interpolator.interpolateColor(interpolatedTemp)
       pixels(i) = Pixel(color.red, color.green, color.blue, configuration.transparency)
     }
     pixels

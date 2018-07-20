@@ -1,10 +1,11 @@
-package observatory.helpers.predictors.spark
+package observatory.visualizers.spark.predictors
 
-import observatory.helpers.SparkContextKeeper.spark
-import observatory.helpers.SparkContextKeeper.spark.implicits._
-import observatory.helpers.VisualizationHelper.{sphereDistance, w}
-import observatory.{Location, TempByLocation, Temperature}
+import observatory.visualizers.common.InverseWeighting
 import org.apache.spark.sql.Dataset
+import observatory.SparkContextKeeper.spark
+import spark.implicits._
+import observatory.{Location, TempByLocation, Temperature}
+
 
 object BroadcastPredictor {
   def apply(epsilon: Double, p: Double): BroadcastPredictor = new BroadcastPredictor(epsilon, p)
@@ -12,11 +13,12 @@ object BroadcastPredictor {
 
 /**
   * Broadcast implementation of the predictor. Fastest version so far. Will fail if dataset doesn't fit into a single
-  * worker's memory
+  * worker's memory.
+  *
   * @param epsilon - value which will replace 0
-  * @param p - interpolation parameter
+  * @param p       - interpolation parameter
   */
-class BroadcastPredictor(private val epsilon: Double, private val p: Double) extends Predictor with Serializable {
+class BroadcastPredictor(private val epsilon: Double, private val p: Double) extends SparkPredictor with Serializable {
   def predictTemperatures(temperatures: Dataset[TempByLocation],
                           locations: Dataset[Location]): Dataset[Temperature] = {
     val temps = spark.sparkContext.broadcast(temperatures.collect())
@@ -25,8 +27,8 @@ class BroadcastPredictor(private val epsilon: Double, private val p: Double) ext
     } yield {
       val comp = temps.value.map {
         tempByLocation: TempByLocation =>
-          val d = sphereDistance(location, tempByLocation.location) max epsilon
-          val wi = w(d, p)
+          val d = InverseWeighting.sphereDistance(location, tempByLocation.location) max epsilon
+          val wi = InverseWeighting.w(d, p)
           (wi * tempByLocation.temperature, wi)
       }
       val (nominator: Temperature, denominator: Temperature) = comp.reduce {

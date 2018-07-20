@@ -1,12 +1,12 @@
-package observatory.helpers.visualizers.par
+package observatory.visualizers.par
 
 import com.sksamuel.scrimage.{Image, Pixel}
 import observatory.Location
-import observatory.helpers.VisualizerConfiguration
+import observatory.visualizers.common.{Visualizer, VisualizerConfiguration}
 
 import scala.collection.parallel.ParIterable
 
-trait ConfigurableVisuzlizer {
+trait ConfigurableVisuzlizer extends Visualizer {
   val configuration: VisualizerConfiguration
   def visualize(): Image = {
     val locations = Range(0, configuration.width * configuration.height).par

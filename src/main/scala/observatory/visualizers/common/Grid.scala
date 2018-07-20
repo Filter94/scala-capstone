@@ -1,4 +1,4 @@
-package observatory.helpers
+package observatory.visualizers.common
 
 import observatory._
 

@@ -1,4 +1,4 @@
-package observatory.helpers.generators
+package observatory.visualizers.common.generators
 
 import observatory.{Location, Tile}
 

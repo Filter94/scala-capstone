@@ -1,6 +1,6 @@
-package observatory.helpers.predictors.spark.aggregators
+package observatory.visualizers.spark.aggregators
 
-import observatory.helpers.VisualizationHelper.{Distance, sphereDistance, w}
+import observatory.visualizers.common.InverseWeighting.{Distance, sphereDistance, w}
 import observatory.{Location, Temperature}
 import org.apache.spark.sql.expressions.Aggregator
 import org.apache.spark.sql.{Encoder, Encoders}

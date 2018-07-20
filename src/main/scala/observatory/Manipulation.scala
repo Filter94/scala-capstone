@@ -1,7 +1,7 @@
 package observatory
 
+import observatory.visualizers.common.Grid
 
-import observatory.helpers.Grid
 
 /**
   * 4th milestone: value-added information

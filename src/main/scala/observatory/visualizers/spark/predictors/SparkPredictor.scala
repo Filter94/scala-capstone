@@ -1,9 +1,9 @@
-package observatory.helpers.predictors.spark
+package observatory.visualizers.spark.predictors
 
 import observatory.{Location, TempByLocation, Temperature}
 import org.apache.spark.sql.Dataset
 
-trait Predictor {
+trait SparkPredictor {
   /**
     * Predicts temperature for each location by given temperatures
     * @param temperatures known temperatures

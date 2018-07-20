@@ -1,9 +1,10 @@
 package observatory
 
 import com.sksamuel.scrimage.Image
-import observatory.helpers.{VisualizationHelper, VisualizerConfiguration}
-import observatory.helpers.predictors.ParPredictor
-import observatory.helpers.visualizers.spark
+import observatory.visualizers.common.VisualizerConfiguration
+import observatory.visualizers.common.interpolators.LinearInterpolator
+import observatory.visualizers.par.InverseDistancePredictor
+import observatory.visualizers.spark.DataVisualizer
 
 /**
   * 2nd milestone: basic visualization
@@ -15,7 +16,7 @@ object Visualization {
     * @return The predicted temperature at `location`
     */
   def predictTemperature(temperatures: Iterable[(Location, Temperature)], location: Location): Temperature = {
-    ParPredictor(1e-5, 3).predictTemperature(temperatures, location)
+    InverseDistancePredictor(1e-5, 3).predictTemperature(temperatures, location)
   }
 
   /**
@@ -24,7 +25,7 @@ object Visualization {
     * @return The color that corresponds to `value`, according to the color scale defined by `points`
     */
   def interpolateColor(points: Iterable[(Temperature, Color)], value: Temperature): Color = {
-    VisualizationHelper.interpolateColor(VisualizationHelper.sortPoints(points.toSeq), value)
+    LinearInterpolator(points).interpolateColor(value)
   }
 
   /**
@@ -34,7 +35,7 @@ object Visualization {
     */
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
     val config = new VisualizerConfiguration.Builder().build
-    spark.Visualizer(temperatures, colors, config).visualize()
+    DataVisualizer(temperatures, colors, config).visualize()
   }
 
 }

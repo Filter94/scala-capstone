@@ -4,9 +4,10 @@ import java.nio.file.Paths
 import java.time.LocalDate
 
 import org.apache.spark.rdd.RDD
-import observatory.helpers.SparkContextKeeper.spark
 import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.functions.avg
+
+import SparkContextKeeper.spark
 
 /**
   * 1st milestone: data extraction

@@ -1,15 +1,15 @@
-package observatory.helpers.predictors
+package observatory.visualizers.par
 
+import observatory.visualizers.common.InverseWeighting
 import observatory.{Location, Temperature}
-import observatory.helpers.VisualizationHelper
 
 import scala.collection.parallel.ParIterable
 
-object ParPredictor {
-  def apply(epsilon: Double, p: Double): ParPredictor = new ParPredictor(epsilon, p)
+object InverseDistancePredictor {
+  def apply(epsilon: Double, p: Double): InverseDistancePredictor = new InverseDistancePredictor(epsilon, p)
 }
 
-class ParPredictor(private val epsilon: Double, private val p: Double) {
+class InverseDistancePredictor(private val epsilon: Double, private val p: Double) extends ParPredictor {
   /**
     * Predicts temperature for each location by given temperatures
     * @param temperatures known temperatures
@@ -30,9 +30,9 @@ class ParPredictor(private val epsilon: Double, private val p: Double) {
     */
   def predictTemperature(temperatures: Iterable[(Location, Temperature)], location: Location): Temperature = {
     val (nominator, denominator) = temperatures.aggregate((0.0, 0.0))({
-      case ((nomAcc: VisualizationHelper.Distance, denomAcc: Temperature), (xi: Location, ui: Temperature)) =>
-        val d = VisualizationHelper.sphereDistance(location, xi) max epsilon
-        val wi = VisualizationHelper.w(d, p)
+      case ((nomAcc: InverseWeighting.Distance, denomAcc: Temperature), (xi: Location, ui: Temperature)) =>
+        val d = InverseWeighting.sphereDistance(location, xi) max epsilon
+        val wi = InverseWeighting.w(d, p)
         (nomAcc + wi * ui, denomAcc + wi)
     }, {
       (a: (Temperature, Temperature), b: (Temperature, Temperature)) =>

@@ -1,9 +1,9 @@
 package observatory
 
 import com.sksamuel.scrimage.Image
-import observatory.helpers.VisualizerConfiguration
-import observatory.helpers.generators.TileLocationsGenerator
-import observatory.helpers.visualizers.par.GridVisualizer
+import observatory.visualizers.common.VisualizerConfiguration
+import observatory.visualizers.common.generators.TileLocationsGenerator
+import observatory.visualizers.par.GridVisualizer
 
 /**
   * 5th milestone: value-added information visualization

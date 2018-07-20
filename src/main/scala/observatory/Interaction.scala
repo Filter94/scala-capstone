@@ -1,9 +1,9 @@
 package observatory
 
 import com.sksamuel.scrimage.Image
-import observatory.helpers.VisualizerConfiguration
-import observatory.helpers.generators.TileLocationsGenerator
-import observatory.helpers.visualizers.par.Visualizer
+import observatory.visualizers.common.VisualizerConfiguration
+import observatory.visualizers.common.generators.TileLocationsGenerator
+import observatory.visualizers.par.DataVisualizer
 
 import math.{pow, _}
 
@@ -28,7 +28,7 @@ object Interaction {
       .setTransparency(transparency)
       .setLocationsGenerator(TileLocationsGenerator(width, height, tile))
       .build
-    Visualizer(temperatures, colors, configuration).visualize()
+    DataVisualizer(temperatures, colors, configuration).visualize()
       .scale(upscaleFactor)
   }
   /**

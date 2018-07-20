@@ -1,13 +1,13 @@
-package observatory.helpers.visualizers.spark
+package observatory.visualizers.spark
 
 import com.sksamuel.scrimage.{Image, Pixel}
 import observatory.Location
-import observatory.helpers.SparkContextKeeper.spark
-import observatory.helpers.SparkContextKeeper.spark.implicits._
-import observatory.helpers.VisualizerConfiguration
+import observatory.SparkContextKeeper.spark
+import observatory.SparkContextKeeper.spark.implicits._
+import observatory.visualizers.common.{Visualizer, VisualizerConfiguration}
 import org.apache.spark.sql.Dataset
 
-trait ConfigurableVisualizer {
+trait ConfigurableSparkVisualizer extends Visualizer {
   val configuration: VisualizerConfiguration
 
   def visualize(): Image = {

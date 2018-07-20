@@ -1,7 +1,7 @@
-package observatory.helpers.predictors.spark.aggregators
+package observatory.visualizers.spark.aggregators
 
 import observatory.Location
-import observatory.helpers.VisualizationHelper.{sphereDistance, w}
+import observatory.visualizers.common.InverseWeighting.{sphereDistance, w}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.expressions.{MutableAggregationBuffer, UserDefinedAggregateFunction}
 import org.apache.spark.sql.types.{DataType, DoubleType, StructField, StructType}

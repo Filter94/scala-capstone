@@ -1,7 +1,7 @@
-package observatory.helpers.predictors.spark
+package observatory.visualizers.spark.predictors
 
-import observatory.helpers.SparkContextKeeper.spark.implicits._
-import observatory.helpers.predictors.spark.aggregators.InterpolatedTempDs
+import observatory.SparkContextKeeper.spark.implicits._
+import observatory.visualizers.spark.aggregators.InterpolatedTempDs
 import observatory.{Location, TempByLocation, Temperature}
 import org.apache.spark.sql.Dataset
 
@@ -14,7 +14,7 @@ object DsPredictor {
   * @param epsilon - value which will replace 0
   * @param p - interpolation parameter
   */
-class DsPredictor(private val epsilon: Double, private val p: Double) extends Predictor with Serializable {
+class DsPredictor(private val epsilon: Double, private val p: Double) extends SparkPredictor with Serializable {
   private val interpolatedTemp = new InterpolatedTempDs(p, epsilon).toColumn
   def predictTemperatures(temperatures: Dataset[TempByLocation],
                           locations: Dataset[Location]): Dataset[Temperature] = {
