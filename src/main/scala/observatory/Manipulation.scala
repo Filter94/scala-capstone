@@ -1,6 +1,6 @@
 package observatory
 
-import observatory.visualizers.common.Grid
+import observatory.common.Grid
 
 
 /**

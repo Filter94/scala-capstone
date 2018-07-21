@@ -1,9 +1,8 @@
 package observatory
 
 import com.sksamuel.scrimage.Image
-import observatory.visualizers.common.VisualizerConfiguration
-import observatory.visualizers.common.generators.TileLocationsGenerator
-import observatory.visualizers.par.DataVisualizer
+import observatory.common.{ImageConfiguration, InverseWeightingConfiguration}
+import observatory.visualizers.spark.{Helper, TileVisualizer}
 
 import math.{pow, _}
 
@@ -22,14 +21,12 @@ object Interaction {
     val width = 256 / upscaleFactor
     val height = 256 / upscaleFactor
     val transparency = 127
-    val configuration = new VisualizerConfiguration.Builder()
-      .setWidth(width)
-      .setHeight(height)
-      .setTransparency(transparency)
-      .setLocationsGenerator(TileLocationsGenerator(width, height, tile))
-      .build
-    DataVisualizer(temperatures, colors, configuration).visualize()
-      .scale(upscaleFactor)
+    TileVisualizer(
+      ImageConfiguration(width, height),
+      tile, transparency,
+      InverseWeightingConfiguration.Builder().build,
+      Helper.toDs(temperatures), colors)
+      .visualize().scale(upscaleFactor)
   }
   /**
     * Generates all the tiles for zoom levels 0 to 3 (included), for all the given years.

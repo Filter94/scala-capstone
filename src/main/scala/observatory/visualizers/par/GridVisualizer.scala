@@ -1,39 +1,28 @@
 package observatory.visualizers.par
 
-import com.sksamuel.scrimage.Pixel
-import observatory.Visualization2.bilinearInterpolation
 import observatory._
-import observatory.visualizers.common.VisualizerConfiguration
-import observatory.visualizers.common.interpolators.LinearInterpolator
-
-import scala.collection.parallel.ParIterable
+import observatory.common.generators.TileLocationGenerator
+import observatory.common.interpolators.LinearInterpolator
+import observatory.common.{ImageConfiguration, InverseWeightingConfiguration, Visualizer}
+import observatory.parimpl.{GridPixelsComputer, IterableParLocationsGenerator}
 
 object GridVisualizer {
-  def apply(colors: Iterable[(Temperature, Color)], grid: GridLocation => Temperature,
-            configuration: VisualizerConfiguration): GridVisualizer =
-    new GridVisualizer(grid, colors, configuration)
+  def apply(grid: GridLocation => Temperature, colors: Iterable[(Temperature, Color)], tile: Tile): GridVisualizer =
+    new GridVisualizer(ImageConfiguration.Builder().build, grid, tile, 127,
+      InverseWeightingConfiguration.Builder().build, colors)
+
+  def apply(grid: GridLocation => Temperature, colors: Iterable[(Temperature, Color)], tile: Tile,
+            imageConfiguration: ImageConfiguration, transparency: Int, predictorConfiguration: InverseWeightingConfiguration) =
+    new GridVisualizer(imageConfiguration, grid, tile, transparency,
+    predictorConfiguration, colors)
 }
 
-/**
-  * Grid visualizer. More robust implementation.
-  */
-class GridVisualizer(val grid: GridLocation => Temperature, val colors: Iterable[(Temperature, Color)],
-                     val configuration: VisualizerConfiguration) extends ConfigurableVisuzlizer {
-  private val interpolator = LinearInterpolator(colors)
-
-  def computePixels(locations: ParIterable[Location]): Array[Pixel] = {
-    val pixels = new Array[Pixel](locations.size)
-    for {
-      (location, i: Int) <- locations.par.zipWithIndex
-    } {
-      val square = location.gridSquare
-      val (d00, d01, d10, d11) = (
-        grid(square.topLeft), grid(square.bottomLeft),
-        grid(square.topRight), grid(square.bottomRight))
-      val interpolatedTemp = bilinearInterpolation(location.cellPoint, d00, d01, d10, d11)
-      val color = interpolator.interpolateColor(interpolatedTemp)
-      pixels(i) = Pixel(color.red, color.green, color.blue, configuration.transparency)
-    }
-    pixels
-  }
+final class GridVisualizer(override val imageConfiguration: ImageConfiguration, grid: GridLocation => Temperature,
+                           tile: Tile, transparency: Int, predictorConfiguration: InverseWeightingConfiguration,
+                           colors: Iterable[(Temperature, Color)])
+  extends Visualizer(imageConfiguration) {
+  val pixelsComputer = GridPixelsComputer(grid,
+    LinearInterpolator(colors),
+    IterableParLocationsGenerator(TileLocationGenerator(imageConfiguration, tile), imageConfiguration),
+    imageConfiguration, transparency)
 }

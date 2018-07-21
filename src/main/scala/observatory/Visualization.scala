@@ -1,10 +1,10 @@
 package observatory
 
 import com.sksamuel.scrimage.Image
-import observatory.visualizers.common.VisualizerConfiguration
-import observatory.visualizers.common.interpolators.LinearInterpolator
-import observatory.visualizers.par.InverseDistancePredictor
-import observatory.visualizers.spark.DataVisualizer
+import observatory.common.InverseWeightingConfiguration
+import observatory.common.interpolators.LinearInterpolator
+import observatory.parimpl.ParInverseWeighingPredictor
+import observatory.visualizers.par.DefaultVisualizer
 
 /**
   * 2nd milestone: basic visualization
@@ -16,7 +16,8 @@ object Visualization {
     * @return The predicted temperature at `location`
     */
   def predictTemperature(temperatures: Iterable[(Location, Temperature)], location: Location): Temperature = {
-    InverseDistancePredictor(1e-5, 3).predictTemperature(temperatures, location)
+    ParInverseWeighingPredictor(temperatures, InverseWeightingConfiguration.Builder().build)
+      .predictTemperature(location)
   }
 
   /**
@@ -34,8 +35,7 @@ object Visualization {
     * @return A 360×180 image where each pixel shows the predicted temperature at its location
     */
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
-    val config = new VisualizerConfiguration.Builder().build
-    DataVisualizer(temperatures, colors, config).visualize()
+    DefaultVisualizer(temperatures, colors).visualize()
   }
 
 }

@@ -8,14 +8,12 @@ import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.functions.avg
 
 import SparkContextKeeper.spark
+import spark.implicits._
 
 /**
   * 1st milestone: data extraction
   */
 object Extraction {
-
-  import spark.implicits._
-
   /**
     * @param year             Year number
     * @param stationsFile     Path of the stations resource file to use (e.g. "/stations.csv")

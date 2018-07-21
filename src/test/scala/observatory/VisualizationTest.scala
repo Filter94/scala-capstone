@@ -1,10 +1,11 @@
 package observatory
 
-
-import observatory.visualizers.common.generators.NaiveGenerator
-import observatory.visualizers.par.InverseDistancePredictor
-import observatory.visualizers.spark.DataVisualizer
-import observatory.visualizers.spark.predictors.BroadcastPredictor
+import observatory.common.{ImageConfiguration, InverseWeightingConfiguration}
+import observatory.common.generators.NaiveGenerator
+import observatory.parimpl.{IterableParLocationsGenerator, ParInverseWeighingPredictor}
+import observatory.sparkimpl.SparkSimpleLocationsGenerator
+import observatory.sparkimpl.predictors.BroadcastPredictor
+import observatory.visualizers.spark.Helper
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 import org.scalactic.Tolerance._
@@ -195,17 +196,18 @@ trait VisualizationTest extends FunSuite with Checkers {
     val temps: Seq[(Location, Temperature)] = Seq(
       (Location(45.0, -90.0), -1.0),
       (Location(-45.0, 0.0), -100.0))
-    val epsilon = 1E-5
-    val p = 3.0
     val WIDTH = 10
     val HEIGHT = 10
-    val locations = Range(0, WIDTH * HEIGHT).par
-      .map(i => NaiveGenerator().get(i))
-    val parTemps = InverseDistancePredictor(epsilon, p).predictTemperatures(temps, locations)
+    val imageConfiguration = ImageConfiguration(WIDTH, HEIGHT)
+    val predictorConfiguration = InverseWeightingConfiguration.Builder().build
 
-    import SparkContextKeeper.spark.implicits._
-    val locationsSpark = SparkContextKeeper.spark.createDataset(locations.seq)
-    val sparkTemps = BroadcastPredictor(epsilon, p).predictTemperatures(DataVisualizer.toDs(temps), locationsSpark).collect().toIterable
+    val locations = IterableParLocationsGenerator(NaiveGenerator(), imageConfiguration).generateLocations()
+    val parTemps = ParInverseWeighingPredictor(temps, predictorConfiguration)
+      .predictTemperatures(locations)
+
+    val locationsSpark = SparkSimpleLocationsGenerator(NaiveGenerator(), imageConfiguration).generateLocations()
+    val tempsDs = Helper.toDs(temps)
+    val sparkTemps = BroadcastPredictor(tempsDs, predictorConfiguration).predictTemperatures(locationsSpark).collect().toIterable
     assert(parTemps.seq == sparkTemps)
   }
 }

@@ -1,8 +1,7 @@
 package observatory
 
 import com.sksamuel.scrimage.Image
-import observatory.visualizers.common.VisualizerConfiguration
-import observatory.visualizers.common.generators.TileLocationsGenerator
+import observatory.common.{ImageConfiguration, InverseWeightingConfiguration}
 import observatory.visualizers.par.GridVisualizer
 
 /**
@@ -46,12 +45,10 @@ object Visualization2 {
     val width = 256 / upscaleFactor
     val height = 256 / upscaleFactor
     val transparency = 127
-    val config = new VisualizerConfiguration.Builder()
-      .setWidth(width)
-      .setHeight(height)
-      .setTransparency(transparency)
-      .setLocationsGenerator(TileLocationsGenerator(width, height, tile))
-      .build
-    GridVisualizer(colors, grid, config).visualize().scale(upscaleFactor)
+    GridVisualizer(grid, colors, tile,
+      ImageConfiguration(width, height),
+      transparency,
+      InverseWeightingConfiguration.Builder().build)
+      .visualize().scale(upscaleFactor)
   }
 }
