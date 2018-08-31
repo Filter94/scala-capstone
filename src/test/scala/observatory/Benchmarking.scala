@@ -85,8 +85,6 @@ class Benchmarking extends FunSuite {
     val time = standardConfig measure {
       val grid: GridLocation => Temperature = Manipulation.average(temps)
       Visualization2.visualizeGrid(grid, colors, tile)
-      Visualization2.visualizeGrid(grid, colors, tile)
-      Visualization2.visualizeGrid(grid, colors, tile)
     }
     println(s"Grid time: $time ms")
   }
@@ -109,15 +107,11 @@ class Benchmarking extends FunSuite {
 
     val tiletime = standardConfig measure {
       Interaction.tile(temps, colors, tile)
-      Interaction.tile(temps, colors, tile)
-      Interaction.tile(temps, colors, tile)
     }
     println(s"Usual time: $tiletime ms")
 
     val gridtime = standardConfig measure {
       val grid: GridLocation => Temperature = Manipulation.makeGrid(temps)
-      Visualization2.visualizeGrid(grid, colors, tile)
-      Visualization2.visualizeGrid(grid, colors, tile)
       Visualization2.visualizeGrid(grid, colors, tile)
     }
     println(s"Grid time: $gridtime ms")
